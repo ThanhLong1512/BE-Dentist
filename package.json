@@ -1,0 +1,30 @@
+{
+  "name": "be-dentist",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "be-dentist": "file:",
+    "dotenv": "^7.0.0",
+    "express": "^4.21.2",
+    "mongoose": "^8.10.1",
+    "slugify": "^1.6.6"
+  },
+  "devDependencies": {
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-config-prettier": "^4.1.0",
+    "eslint-plugin-import": "^2.17.2",
+    "eslint-plugin-jsx-a11y": "^6.2.1",
+    "eslint-plugin-node": "^8.0.1",
+    "eslint-plugin-prettier": "^3.0.1",
+    "eslint-plugin-react": "^7.12.4",
+    "nodemon": "^3.1.9",
+    "prettier": "^1.17.0"
+  }
+}
