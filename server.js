@@ -15,38 +15,43 @@ const START_SERVER = () => {
     process.env.DATABASE_PASSWORD
   );
 
-  mongoose
-    .connect(DB, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    })
+  return mongoose
+    .connect(DB)
     .then(con => {
       console.log(con.connection);
       console.log("Database connection successful");
+
+      // Fix Cache from disk from ExpressJS
+      app.use((req, res, next) => {
+        res.set("Cache-Control", "no-store");
+        next();
+      });
+
+      // Parse cookies
+      app.use(cookieParser());
+
+      // Enable CORS
+      app.use(cors(corsOptions));
+
+      // Parse JSON bodies
+      app.use(express.json());
+
+      // Set host and port with fallback values
+      const host = process.env.HOST || "127.0.0.1";
+      const port = process.env.PORT || 3000;
+
+      return new Promise((resolve, reject) => {
+        const server = app.listen(port, host, () => {
+          resolve(server);
+        });
+
+        server.on("error", reject);
+      });
+    })
+    .catch(error => {
+      console.error("Database connection failed", error);
+      throw error;
     });
-
-  // Fix Cache from disk from ExpressJS
-  // Một middleware, Cache-Control là một header HTTP dùng để điều khiển cách trình duyệt/proxy lưu trữ response
-  app.use((req, res, next) => {
-    res.set("Cache-Control", "no-store");
-    next();
-  });
-
-  // Dùng đê phân tích và đọc cookie từ request Express
-  app.use(cookieParser());
-
-  app.use(cors(corsOptions));
-  // Cho phép server đọc dữ liệu JSON từ request body
-  app.use(express.json());
-
-  app.listen(process.env.HOST, process.env.PORT, () => {
-    console.log(`App running on port ${process.env.PORT}...`);
-  });
-
-  // Xử lý tất cả những trường hợp Unhandle promise Rejection
-  process.on("UnhandledRejection", err => {
-    console.log(err.name, err.message);
-  });
 };
 
 (() => {
@@ -55,6 +60,6 @@ const START_SERVER = () => {
     .then(() => console.log("Server started successfully"))
     .catch(error => {
       console.error(error);
-      process.exit(0);
+      process.exit(1); // Exit with a failure code
     });
 })();
