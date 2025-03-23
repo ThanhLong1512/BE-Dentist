@@ -7,6 +7,11 @@ const corsOptions = require("./config/corsOption");
 
 const app = require("./index");
 
+process.on("uncaughtException", err => {
+  console.log("UNCAUGHT EXCEPTION! 💥 Shutting down...");
+  console.log(err.name, err.message);
+  process.exit(1);
+});
 dotenv.config({ path: "./config.env" });
 
 const START_SERVER = () => {
@@ -17,8 +22,7 @@ const START_SERVER = () => {
 
   return mongoose
     .connect(DB)
-    .then(con => {
-      console.log(con.connection);
+    .then(() => {
       console.log("Database connection successful");
 
       // Fix Cache from disk from ExpressJS
@@ -37,14 +41,26 @@ const START_SERVER = () => {
       app.use(express.json());
 
       // Set host and port with fallback values
-      const host = process.env.HOST || "127.0.0.1";
-      const port = process.env.PORT || 3000;
+      const host = process.env.LOCAL_DEV_APP_HOST || "127.0.0.1";
+      const port = process.env.LOCAL_DEV_APP_PORT || 3000;
 
       return new Promise((resolve, reject) => {
         const server = app.listen(port, host, () => {
           resolve(server);
         });
-
+        process.on("unhandledRejection", err => {
+          console.log("UNHANDLED REJECTION! 💥 Shutting down...");
+          console.log(err.name, err.message);
+          server.close(() => {
+            process.exit(1);
+          });
+        });
+        process.on("SIGTERM", () => {
+          console.log("👋 SIGTERM RECEIVED. Shutting down gracefully");
+          server.close(() => {
+            console.log("💥 Process terminated!");
+          });
+        });
         server.on("error", reject);
       });
     })
