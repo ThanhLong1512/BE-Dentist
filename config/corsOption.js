@@ -4,5 +4,6 @@ module.exports = {
     return callback(null, true);
   },
   // Một số trình duyệt cũ như IE11 hoặc SmartTVs gặp vấn đề với mã trạng thái 204
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  credentials: true
 };

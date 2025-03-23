@@ -1,4 +1,6 @@
 {
+  "proseWrap": "always",
+  "printWidth": 80,
   "prettier/prettier": [
     "error",
     {
