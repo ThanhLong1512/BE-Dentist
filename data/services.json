@@ -1,0 +1,18 @@
+[
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c0d",
+    "nameService": "Skin Consultation",
+    "Unit": "Session",
+    "priceService": 500000,
+    "photoService": "skin_consultation.jpg",
+    "description": "Comprehensive skin health assessment and treatment plan"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c0e",
+    "nameService": "General Check-up",
+    "Unit": "Session",
+    "priceService": 300000,
+    "photoService": "general_checkup.jpg",
+    "description": "Routine health examination and preventive care"
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "patient": "5f8d1a2b3c4d5c6f7a8b9c0d",
+    "Date": "2024-06-15",
+    "Time": "10:00 AM",
+    "service": "5f8d1a2ba2dd5d6f7a8b9c0d"
+  },
+  {
+    "patient": "5f8d1a2b3c4d5d6f7a8b9c0d",
+    "Date": "2024-06-16",
+    "Time": "02:30 PM",
+    "service": "5f8d1a2ba2dd5d6f7a8b9c0d"
+  }
+]

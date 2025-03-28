@@ -24,8 +24,6 @@ const START_SERVER = () => {
     .connect(DB)
     .then(() => {
       console.log("Database connection successful");
-
-      // Fix Cache from disk from ExpressJS
       app.use((req, res, next) => {
         res.set("Cache-Control", "no-store");
         next();
@@ -76,6 +74,6 @@ const START_SERVER = () => {
     .then(() => console.log("Server started successfully"))
     .catch(error => {
       console.error(error);
-      process.exit(1); // Exit with a failure code
+      process.exit(1);
     });
 })();
