@@ -7,14 +7,14 @@ const generateToken = async (payLoad, secretSignature, tokenLife) => {
       expiresIn: tokenLife
     });
   } catch (error) {
-    throw new Error(error.message());
+    throw new Error(error.message);
   }
 };
 const verifyToken = async (token, secretSignature) => {
   try {
     return JWT.verify(token, secretSignature);
   } catch (error) {
-    throw new Error(error.message());
+    throw new Error(error.message);
   }
 };
 const JwtProvider = { generateToken, verifyToken };

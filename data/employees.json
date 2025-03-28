@@ -1,0 +1,24 @@
+[
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c0d",
+    "name": "Dr. Emily Chen",
+    "phoneNumber": "0987654321",
+    "gender": true,
+    "email": "emily.chen@clinic.com",
+    "experience": "10 years in dermatology",
+    "photo": "emily_profile.jpg",
+    "description": "Experienced dermatologist specializing in skin treatments",
+    "service": "5f8d1a2ba2dd5d6f7a8b9c0d"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c0e",
+    "name": "Dr. Michael Lee",
+    "phoneNumber": "0123456789",
+    "gender": false,
+    "email": "michael.lee@clinic.com",
+    "experience": "5 years in general practice",
+    "photo": "michael_profile.jpg",
+    "description": "Skilled general practitioner with comprehensive medical knowledge",
+    "service": "5f8d1a2ba2dd5d6f7a8b9c0d"
+  }
+]

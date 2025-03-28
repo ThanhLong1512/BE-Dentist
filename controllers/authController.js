@@ -1,60 +1,53 @@
 const { StatusCodes } = require("http-status-codes");
 const ms = require("ms");
 const JwtProvider = require("./../providers/JwtProvider");
+const CatchAsync = require("./../utils/catchAsync");
+const AppError = require("../utils/appError");
+const Account = require("../models/AccountModel");
 
-const MOCK_DATABASE = {
-  USER: {
-    ID: "thanhlong-sample-id-12345678",
-    EMAIL: "thanhlongdev.official@gmail.com",
-    PASSWORD: "thanhlongdev@123",
-    ROLE: "USER"
+const login = CatchAsync(async (req, res, next) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return next(new AppError("Please provide email and password", 400));
   }
-};
+  const user = await Account.findOne({ email }).select("+password");
 
-const login = async (req, res) => {
-  try {
-    const { EMAIL, PASSWORD } = MOCK_DATABASE.USER;
-    if (req.body.email !== EMAIL || req.body.password !== PASSWORD) {
-      res
-        .status(StatusCodes.UNAUTHORIZED)
-        .json({ message: "Your email or password is incorrect!" });
-      return;
-    }
-    const payLoad = {
-      id: MOCK_DATABASE.USER.ID,
-      email: MOCK_DATABASE.USER.EMAIL,
-      password: MOCK_DATABASE.USER.PASSWORD,
-      role: MOCK_DATABASE.USER.ROLE
-    };
-    const accessToken = await JwtProvider.generateToken(
-      payLoad,
-      process.env.ACCESS_TOKEN_SIGNATURE,
-      "1h"
-    );
-    const refreshToken = await JwtProvider.generateToken(
-      payLoad,
-      process.env.REFRESH_TOKEN_SIGNATURE,
-      "30 days"
-    );
-    res.cookie("accessToken", accessToken, {
-      maxAge: ms("30 days"),
-      httpOnly: true,
-      secure: true,
-      sameSite: "none"
-    });
-    res.cookie("refreshToken", refreshToken, {
-      maxAge: ms("30 days"),
-      httpOnly: true,
-      secure: true,
-      sameSite: "none"
-    });
-    res.status(StatusCodes.OK).json({ ...payLoad, accessToken, refreshToken });
-  } catch (error) {
-    res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: "Something went wrong!" });
+  if (!user) {
+    return next(new AppError("Incorrect email or password", 401));
   }
-};
+
+  const payLoad = {
+    id: user._id,
+    email: user.email,
+    password: user.password,
+    role: user.role
+  };
+  const accessToken = await JwtProvider.generateToken(
+    payLoad,
+    process.env.ACCESS_TOKEN_SIGNATURE,
+    "3h"
+  );
+  const refreshToken = await JwtProvider.generateToken(
+    payLoad,
+    process.env.REFRESH_TOKEN_SIGNATURE,
+    "30 days"
+  );
+  res.cookie("accessToken", accessToken, {
+    maxAge: ms("30 days"),
+    httpOnly: true,
+    secure: true,
+    sameSite: "none"
+  });
+  res.cookie("refreshToken", refreshToken, {
+    maxAge: ms("30 days"),
+    httpOnly: true,
+    secure: true,
+    sameSite: "none"
+  });
+  res.clearCookie("__sbref");
+  res.status(StatusCodes.OK).json({ ...payLoad, accessToken, refreshToken });
+  // If everything is oke, send token to client
+});
 
 const logout = async (req, res) => {
   try {
@@ -106,5 +99,27 @@ const refreshToken = async (req, res) => {
   }
 };
 
-const authController = { login, logout, refreshToken };
+const register = CatchAsync(async (req, res) => {
+  const emailExisting = await Account.findOne({ email: req.body.email });
+  if (emailExisting) {
+    return res.status(StatusCodes.CONFLICT).json({
+      message: "Email already exists. Please use another email!"
+    });
+  }
+  const newUser = await Account.create({
+    name: req.body.name,
+    email: req.body.email,
+    password: req.body.password,
+    passwordConfirm: req.body.passwordConfirm
+  });
+  const payLoad = {
+    id: newUser._id,
+    email: newUser.email,
+    role: newUser.role,
+    password: newUser.password
+  };
+  await createSendToken(payLoad, req, res);
+});
+
+const authController = { login, logout, refreshToken, register };
 module.exports = authController;

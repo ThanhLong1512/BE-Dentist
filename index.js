@@ -8,21 +8,27 @@ const xss = require("xss-clean");
 const timeout = require("connect-timeout");
 const hpp = require("hpp");
 const compression = require("compression");
+// const globalErrorHandler = require("./controllers/errorController");
 
 const AppError = require("./utils/appError");
 const authRouter = require("./routes/authRoutes");
+const employeeRouter = require("./routes/employeeRoutes");
 const corsOption = require("./config/corsOption");
 
 const app = express();
 
 // Set timeout to 10 seconds
-app.use(timeout("10s"));
+// app.use(timeout("10s"));
 
 // Trust only the loopback interface (localhost)
 app.set("trust proxy", "loopback");
 
+// Parse cookies
+app.use(cookieParser());
+
 // Enable CORS
 app.use(cors(corsOption));
+
 app.options("*", cors());
 
 // Enhance security with Helmet
@@ -42,9 +48,6 @@ app.use("/api", limiter);
 // Parse JSON and URL-encoded bodies
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
-
-// Parse cookies
-app.use(cookieParser());
 
 // Sanitize data to prevent NoSQL injection
 app.use(mongoSanitize());
@@ -71,11 +74,13 @@ app.use(compression());
 
 // Routes
 app.use("/api/v1/users", authRouter);
+app.use("/api/v1/employees", employeeRouter);
 
 // Handle 404 errors
 app.all("*", (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
+// app.use(globalErrorHandler);
 // Export the app
 module.exports = app;
