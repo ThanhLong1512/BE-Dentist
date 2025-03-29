@@ -6,3 +6,4 @@ module.exports = {
   // Một số trình duyệt cũ như IE11 hoặc SmartTVs gặp vấn đề với mã trạng thái 204
   optionsSuccessStatus: 200
 };
+

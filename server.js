@@ -1,65 +1,63 @@
+require("dotenv").config({ path: "./config.env" });
+const express = require("express");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-const dotenv = require("dotenv");
-const express = require("express");
 const corsOptions = require("./config/corsOption");
 
-const app = require("./index");
+// Import routes
+const employeeRoutes = require("./routes/employeeRoutes");
+const patientRoutes = require("./routes/patientRoutes");
 
-dotenv.config({ path: "./config.env" });
+// Tạo ứng dụng Express
+const app = express();
 
-const START_SERVER = () => {
-  const DB = process.env.DATABASE.replace(
-    "<PASSWORD>",
-    process.env.DATABASE_PASSWORD
-  );
+// Middleware quan trọng
+app.use(express.json()); // Hỗ trợ JSON request
+app.use(express.urlencoded({ extended: true })); // Hỗ trợ form data
+app.use(cookieParser()); // Xử lý cookies
+app.use(cors(corsOptions)); // Cấu hình CORS
 
-  return mongoose
-    .connect(DB)
-    .then(con => {
-      console.log(con.connection);
-      console.log("Database connection successful");
+// Fix cache từ ExpressJS
+app.use((req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
 
-      // Fix Cache from disk from ExpressJS
-      app.use((req, res, next) => {
-        res.set("Cache-Control", "no-store");
-        next();
-      });
+// Routes
+app.use("/api/employees", employeeRoutes);
+app.use("/api/patients", patientRoutes);
 
-      // Parse cookies
-      app.use(cookieParser());
+// Cấu hình cổng và host
+const host = process.env.HOST || "127.0.0.1";
+const port = process.env.PORT || 3000;
 
-      // Enable CORS
-      app.use(cors(corsOptions));
+// Kết nối MongoDB
+const connectDB = async () => {
+  try {
+    const DB_URI = process.env.DATABASE.replace(
+      "<PASSWORD>",
+      process.env.DATABASE_PASSWORD
+    );
 
-      // Parse JSON bodies
-      app.use(express.json());
+    await mongoose.connect(DB_URI);
+    console.log("✅ Database connected successfully");
 
-      // Set host and port with fallback values
-      const host = process.env.HOST || "127.0.0.1";
-      const port = process.env.PORT || 3000;
-
-      return new Promise((resolve, reject) => {
-        const server = app.listen(port, host, () => {
-          resolve(server);
-        });
-
-        server.on("error", reject);
-      });
-    })
-    .catch(error => {
-      console.error("Database connection failed", error);
-      throw error;
+    // Sau khi kết nối thành công, start server
+    app.listen(port, host, () => {
+      console.log(`🚀 Server running at http://${host}:${port}`);
     });
+  } catch (error) {
+    console.error("❌ Database connection failed:", error.message);
+    process.exit(1);
+  }
 };
 
-(() => {
-  console.log("Starting Server...");
-  START_SERVER()
-    .then(() => console.log("Server started successfully"))
-    .catch(error => {
-      console.error(error);
-      process.exit(1); // Exit with a failure code
-    });
-})();
+// Xử lý sự kiện mất kết nối MongoDB
+mongoose.connection.on("error", (err) => {
+  console.error("❌ MongoDB Connection Error:", err);
+});
+
+// Khởi động server
+console.log("⏳ Starting server...");
+connectDB();
