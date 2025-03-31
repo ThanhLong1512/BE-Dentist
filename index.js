@@ -12,7 +12,10 @@ const compression = require("compression");
 
 const AppError = require("./utils/appError");
 const authRouter = require("./routes/authRoutes");
-const employeeRouter = require("./routes/employeeRoutes");
+const employeeRoutes = require("./routes/employeeRoutes");
+const patientRoutes = require("./routes/patientRoutes");
+const serviceRoutes = require("./routes/serviceRoutes");
+const accountRouter = require("./routes/accountRoutes");
 const corsOption = require("./config/corsOption");
 
 const app = express();
@@ -74,7 +77,11 @@ app.use(compression());
 
 // Routes
 app.use("/api/v1/users", authRouter);
-app.use("/api/v1/employees", employeeRouter);
+app.use("/api/v1/accounts", accountRouter);
+app.use("/api/v1/employees", employeeRoutes);
+app.use("/api/v1/patients", patientRoutes);
+app.use("/api/v1/services", serviceRoutes);
+// // Import routes
 
 // Handle 404 errors
 app.all("*", (req, res, next) => {

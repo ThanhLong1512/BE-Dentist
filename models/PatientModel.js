@@ -38,7 +38,14 @@ const patientSchema = mongoose.Schema({
   account: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Account",
-    required: [true, "Please provide an account"]
+    required: [true, "Please provide an account"],
+    unique: true,
+    validate: {
+      validator: function(value) {
+        return mongoose.Types.ObjectId.isValid(value);
+      },
+      message: "Please provide a valid account ID"
+    }
   }
 });
 const Patient = mongoose.model("Patient", patientSchema);

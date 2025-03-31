@@ -106,6 +106,11 @@ const register = CatchAsync(async (req, res) => {
       message: "Email already exists. Please use another email!"
     });
   }
+  // WHEN I USE CREATE ACCOUNT.create(), it have a few helpful things like
+  // - it will directly save on database
+  // - it will return a promise
+  // - it will automatically implement middlewares
+  // - it will automatically catch errors
   const newUser = await Account.create({
     name: req.body.name,
     email: req.body.email,

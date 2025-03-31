@@ -9,3 +9,4 @@ module.exports = {
 
   credentials: true
 };
+
