@@ -38,21 +38,15 @@ const patientSchema = mongoose.Schema({
   account: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Account",
-    required: [true, "Please provide an account"]
+    required: [true, "Please provide an account"],
+    unique: true,
+    validate: {
+      validator: function(value) {
+        return mongoose.Types.ObjectId.isValid(value);
+      },
+      message: "Please provide a valid account ID"
+    }
   }
 });
 const Patient = mongoose.model("Patient", patientSchema);
 module.exports = Patient;
-
-const mongoose = require("mongoose");
-
-const patientSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  phone: { type: String, required: true },
-  position: { type: String },
-  salary: { type: Number },
-  createdAt: { type: Date, default: Date.now }
-});
-
-module.exports = mongoose.model("Patient", patientSchema);

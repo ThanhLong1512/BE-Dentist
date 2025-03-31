@@ -1,6 +1,11 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
 const bcrypt = require("bcryptjs");
+const {
+  hashPassword,
+  filterLockedAccounts,
+  correctPassword
+} = require("../middlewares/accountMiddleware");
 
 const accountSchema = new mongoose.Schema({
   name: {
@@ -55,12 +60,8 @@ const accountSchema = new mongoose.Schema({
 //   next();
 // });
 
-// // Middleware lọc các tài khoản không hoạt động
-// accountSchema.pre(/^find/, function(next) {
-//   // this trỏ đến truy vấn hiện tại
-//   this.find({ isLocked: { $ne: true } });
-//   next();
-// });
+// Middleware lọc các tài khoản không hoạt động
+accountSchema.pre(/^find/, filterLockedAccounts);
 
 // // Phương thức kiểm tra mật khẩu
 // accountSchema.methods.correctPassword = async function(

@@ -1,12 +1,12 @@
 const express = require("express");
-const router = express.Router();
-const PatientController = require("../controllers/PatientController"); // Kiểm tra đường dẫn
+const PatientController = require("../controllers/PatientController");
 
-router.get("/", PatientController.getPatients);
-router.post("/", PatientController.createPatient);
-router.get("/:id", PatientController.getPatientById);
-router.put("/:id", PatientController.updatePatient);
-router.delete("/:id", PatientController.deletePatient);
+const Router = express.Router();
 
-// Đảm bảo xuất đúng kiểu `router`
-module.exports = router;
+Router.get("/", PatientController.getPatients);
+Router.post("/", PatientController.createPatient);
+Router.get("/:id", PatientController.getPatientById);
+Router.put("/:id", PatientController.updatePatient);
+Router.delete("/:id", PatientController.deletePatient);
+
+module.exports = Router;
