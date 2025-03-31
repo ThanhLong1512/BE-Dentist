@@ -1,8 +1,8 @@
+require("dotenv").config({ path: "./config.env" });
+const express = require("express");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
-const dotenv = require("dotenv");
-const express = require("express");
 const corsOptions = require("./config/corsOption");
 
 const app = require("./index");
