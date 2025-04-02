@@ -1,24 +1,112 @@
 [
   {
-    "_id": "5f8d1a2ba2dd5d6f7a8b9c0d",
-    "name": "Dr. Emily Chen",
-    "phoneNumber": "0987654321",
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c0f",
+    "name": "Dr. Sarah Nguyen",
+    "phoneNumber": "0909123456",
     "gender": true,
-    "email": "emily.chen@clinic.com",
-    "experience": "10 years in dermatology",
-    "photo": "emily_profile.jpg",
-    "description": "Experienced dermatologist specializing in skin treatments",
-    "service": "5f8d1a2ba2dd5d6f7a8b9c0d"
+    "email": "sarah.nguyen@clinic.com",
+    "experience": "8 years in dental medicine",
+    "photo": "sarah_profile.jpg",
+    "description": "Specialized dentist with expertise in cosmetic and restorative procedures",
+    "service": "5f8d1a2ba2dd5d6f7a8b9c10"
   },
   {
-    "_id": "5f8d1a2ba2dd5d6f7a8b9c0e",
-    "name": "Dr. Michael Lee",
-    "phoneNumber": "0123456789",
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c10",
+    "name": "Dr. David Kim",
+    "phoneNumber": "0912345678",
     "gender": false,
-    "email": "michael.lee@clinic.com",
-    "experience": "5 years in general practice",
-    "photo": "michael_profile.jpg",
-    "description": "Skilled general practitioner with comprehensive medical knowledge",
-    "service": "5f8d1a2ba2dd5d6f7a8b9c0d"
+    "email": "david.kim@clinic.com",
+    "experience": "12 years in ophthalmology",
+    "photo": "david_profile.jpg",
+    "description": "Expert ophthalmologist specializing in eye diseases and surgical treatments",
+    "service": "5f8d1a2ba2dd5d6f7a8b9c11"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c11",
+    "name": "Dr. Jennifer Tran",
+    "phoneNumber": "0978123456",
+    "gender": true,
+    "email": "jennifer.tran@clinic.com",
+    "experience": "7 years in physiotherapy",
+    "photo": "jennifer_profile.jpg",
+    "description": "Dedicated physiotherapist with expertise in sports injuries rehabilitation",
+    "service": "5f8d1a2ba2dd5d6f7a8b9c12"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c12",
+    "name": "Dr. Robert Wang",
+    "phoneNumber": "0918765432",
+    "gender": false,
+    "email": "robert.wang@clinic.com",
+    "experience": "15 years in nutrition",
+    "photo": "robert_profile.jpg",
+    "description": "Board-certified nutritionist specializing in dietary management for chronic diseases",
+    "service": "5f8d1a2ba2dd5d6f7a8b9c13"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c13",
+    "name": "Dr. Lisa Hoang",
+    "phoneNumber": "0865432198",
+    "gender": true,
+    "email": "lisa.hoang@clinic.com",
+    "experience": "6 years in vaccination",
+    "photo": "lisa_profile.jpg",
+    "description": "Specialized in immunization protocols and preventive healthcare",
+    "service": "5f8d1a2ba2dd5d6f7a8b9c14"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c14",
+    "name": "Dr. James Park",
+    "phoneNumber": "0932145678",
+    "gender": false,
+    "email": "james.park@clinic.com",
+    "experience": "9 years in psychiatry",
+    "photo": "james_profile.jpg",
+    "description": "Compassionate psychiatrist specializing in anxiety and depression treatment",
+    "service": "5f8d1a2ba2dd5d6f7a8b9c15"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c15",
+    "name": "Dr. Anna Lin",
+    "phoneNumber": "0985671234",
+    "gender": true,
+    "email": "anna.lin@clinic.com",
+    "experience": "11 years in ENT",
+    "photo": "anna_profile.jpg",
+    "description": "Expert in diagnosing and treating complex ear, nose, and throat conditions",
+    "service": "5f8d1a2ba2dd5d6f7a8b9c16"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c16",
+    "name": "Dr. Thomas Pham",
+    "phoneNumber": "0967891234",
+    "gender": false,
+    "email": "thomas.pham@clinic.com",
+    "experience": "14 years in medical imaging",
+    "photo": "thomas_profile.jpg",
+    "description": "Skilled radiologist with expertise in ultrasound and diagnostic imaging",
+    "service": "5f8d1a2ba2dd5d6f7a8b9c17"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c17",
+    "name": "Dr. Grace Zhao",
+    "phoneNumber": "0945678912",
+    "gender": true,
+    "email": "grace.zhao@clinic.com",
+    "experience": "13 years in cardiology",
+    "photo": "grace_profile.jpg",
+    "description": "Experienced cardiologist specializing in preventive cardiac care and treatment",
+    "service": "5f8d1a2ba2dd5d6f7a8b9c18"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c18",
+    "name": "Dr. Kevin Truong",
+    "phoneNumber": "0923456789",
+    "gender": false,
+    "email": "kevin.truong@clinic.com",
+    "experience": "10 years in laboratory medicine",
+    "photo": "kevin_profile.jpg",
+    "description": "Specialized in laboratory diagnostics and interpretation of complex test results",
+    "service": "5f8d1a2ba2dd5d6f7a8b9c0f"
   }
 ]

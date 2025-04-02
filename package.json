@@ -17,6 +17,7 @@
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "be-dentist": "file:",
+    "cloudinary": "^2.6.0",
     "compression": "^1.8.0",
     "connect-timeout": "^1.9.0",
     "cookie-parser": "^1.4.6",

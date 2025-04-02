@@ -10,5 +10,47 @@
     "DayOfWeek": "Wednesday",
     "StartTime": "09:00",
     "EndTime": "17:00"
+  },
+  {
+    "employee": "5f8d1a2ba2dd5d6f7a8b9c0f",
+    "DayOfWeek": "Tuesday",
+    "StartTime": "08:30",
+    "EndTime": "16:30"
+  },
+  {
+    "employee": "5f8d1a2ba2dd5d6f7a8b9c10",
+    "DayOfWeek": "Thursday",
+    "StartTime": "09:30",
+    "EndTime": "17:30"
+  },
+  {
+    "employee": "5f8d1a2ba2dd5d6f7a8b9c11",
+    "DayOfWeek": "Friday",
+    "StartTime": "08:00",
+    "EndTime": "16:00"
+  },
+  {
+    "employee": "5f8d1a2ba2dd5d6f7a8b9c12",
+    "DayOfWeek": "Monday",
+    "StartTime": "10:00",
+    "EndTime": "18:00"
+  },
+  {
+    "employee": "5f8d1a2ba2dd5d6f7a8b9c13",
+    "DayOfWeek": "Tuesday",
+    "StartTime": "09:00",
+    "EndTime": "17:00"
+  },
+  {
+    "employee": "5f8d1a2ba2dd5d6f7a8b9c0d",
+    "DayOfWeek": "Thursday",
+    "StartTime": "08:00",
+    "EndTime": "16:00"
+  },
+  {
+    "employee": "5f8d1a2ba2dd5d6f7a8b9c0e",
+    "DayOfWeek": "Friday",
+    "StartTime": "09:00",
+    "EndTime": "17:00"
   }
 ]

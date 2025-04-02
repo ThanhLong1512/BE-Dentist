@@ -1,12 +1,18 @@
 const express = require("express");
-const PatientController = require("../controllers/PatientController");
+const PatientController = require("../controllers/patientController");
+const authMiddleware = require("../middlewares/authMiddleware");
 
 const Router = express.Router();
 
-Router.get("/", PatientController.getPatients);
-Router.post("/", PatientController.createPatient);
-Router.get("/:id", PatientController.getPatientById);
-Router.put("/:id", PatientController.updatePatient);
-Router.delete("/:id", PatientController.deletePatient);
+Router.use(authMiddleware.isAuthorized); // Apply authentication middleware to all routes
+
+// Define routes for patient-related operations
+Router.route("/")
+  .get(PatientController.getPatients)
+  .post(PatientController.createPatient);
+Router.route("/:id")
+  .get(PatientController.getPatientById)
+  .put(PatientController.updatePatient)
+  .delete(PatientController.deletePatient);
 
 module.exports = Router;

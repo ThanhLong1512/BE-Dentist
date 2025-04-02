@@ -1,18 +1,82 @@
 [
   {
-    "_id": "5f8d1a2ba2dd5d6f7a8b9c0d",
-    "nameService": "Skin Consultation",
-    "Unit": "Session",
-    "priceService": 500000,
-    "photoService": "skin_consultation.jpg",
-    "description": "Comprehensive skin health assessment and treatment plan"
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c0f",
+    "nameService": "Laboratory Tests",
+    "Unit": "Package",
+    "priceService": 450000,
+    "photoService": "lab_tests.jpg",
+    "description": "Complete blood count, liver function, kidney function and other essential tests"
   },
   {
-    "_id": "5f8d1a2ba2dd5d6f7a8b9c0e",
-    "nameService": "General Check-up",
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c10",
+    "nameService": "Dental Checkup",
     "Unit": "Session",
-    "priceService": 300000,
-    "photoService": "general_checkup.jpg",
-    "description": "Routine health examination and preventive care"
+    "priceService": 350000,
+    "photoService": "dental_checkup.jpg",
+    "description": "Comprehensive dental examination, cleaning and minor treatments"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c11",
+    "nameService": "Eye Examination",
+    "Unit": "Session",
+    "priceService": 250000,
+    "photoService": "eye_exam.jpg",
+    "description": "Vision testing, eye pressure measurements and general eye health assessment"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c12",
+    "nameService": "Physiotherapy",
+    "Unit": "Hour",
+    "priceService": 400000,
+    "photoService": "physiotherapy.jpg",
+    "description": "Professional physical therapy for injury recovery and pain management"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c13",
+    "nameService": "Nutrition Consultation",
+    "Unit": "Session",
+    "priceService": 280000,
+    "photoService": "nutrition_consultation.jpg",
+    "description": "Personalized dietary advice and nutrition planning for optimal health"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c14",
+    "nameService": "Vaccination",
+    "Unit": "Dose",
+    "priceService": 200000,
+    "photoService": "vaccination.jpg",
+    "description": "Standard vaccinations for adults and children with medical consultation"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c15",
+    "nameService": "Mental Health Counseling",
+    "Unit": "Session",
+    "priceService": 550000,
+    "photoService": "mental_health.jpg",
+    "description": "Professional psychological assessment and therapy with licensed counselors"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c16",
+    "nameService": "ENT Examination",
+    "Unit": "Session",
+    "priceService": 320000,
+    "photoService": "ent_exam.jpg",
+    "description": "Comprehensive examination of ears, nose, and throat by specialists"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c17",
+    "nameService": "Ultrasound Scan",
+    "Unit": "Procedure",
+    "priceService": 600000,
+    "photoService": "ultrasound.jpg",
+    "description": "Non-invasive imaging of internal organs for diagnostic purposes"
+  },
+  {
+    "_id": "5f8d1a2ba2dd5d6f7a8b9c18",
+    "nameService": "Cardiology Assessment",
+    "Unit": "Session",
+    "priceService": 750000,
+    "photoService": "cardiology.jpg",
+    "description": "Heart health evaluation including ECG and stress test where applicable"
   }
 ]

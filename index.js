@@ -8,20 +8,21 @@ const xss = require("xss-clean");
 const timeout = require("connect-timeout");
 const hpp = require("hpp");
 const compression = require("compression");
-// const globalErrorHandler = require("./controllers/errorController");
 
 const AppError = require("./utils/appError");
+const globalErrorHandler = require("./controllers/errorController");
 const authRouter = require("./routes/authRoutes");
 const employeeRoutes = require("./routes/employeeRoutes");
 const patientRoutes = require("./routes/patientRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
 const accountRouter = require("./routes/accountRoutes");
+const appointmentRoutes = require("./routes/appointmentRoutes");
 const corsOption = require("./config/corsOption");
 
 const app = express();
 
 // Set timeout to 10 seconds
-// app.use(timeout("10s"));
+app.use(timeout("10s"));
 
 // Trust only the loopback interface (localhost)
 app.set("trust proxy", "loopback");
@@ -81,6 +82,7 @@ app.use("/api/v1/accounts", accountRouter);
 app.use("/api/v1/employees", employeeRoutes);
 app.use("/api/v1/patients", patientRoutes);
 app.use("/api/v1/services", serviceRoutes);
+app.use("/api/v1/appointments", appointmentRoutes);
 // // Import routes
 
 // Handle 404 errors
@@ -88,6 +90,6 @@ app.all("*", (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
-// app.use(globalErrorHandler);
+app.use(globalErrorHandler);
 // Export the app
 module.exports = app;

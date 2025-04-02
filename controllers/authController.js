@@ -22,31 +22,9 @@ const login = CatchAsync(async (req, res, next) => {
     password: user.password,
     role: user.role
   };
-  const accessToken = await JwtProvider.generateToken(
-    payLoad,
-    process.env.ACCESS_TOKEN_SIGNATURE,
-    "3h"
-  );
-  const refreshToken = await JwtProvider.generateToken(
-    payLoad,
-    process.env.REFRESH_TOKEN_SIGNATURE,
-    "30 days"
-  );
-  res.cookie("accessToken", accessToken, {
-    maxAge: ms("30 days"),
-    httpOnly: true,
-    secure: true,
-    sameSite: "none"
-  });
-  res.cookie("refreshToken", refreshToken, {
-    maxAge: ms("30 days"),
-    httpOnly: true,
-    secure: true,
-    sameSite: "none"
-  });
-  res.clearCookie("__sbref");
-  res.status(StatusCodes.OK).json({ ...payLoad, accessToken, refreshToken });
+
   // If everything is oke, send token to client
+  await createSendToken(payLoad, req, res);
 });
 
 const logout = async (req, res) => {
@@ -126,5 +104,45 @@ const register = CatchAsync(async (req, res) => {
   await createSendToken(payLoad, req, res);
 });
 
-const authController = { login, logout, refreshToken, register };
+const restrictTo = (...roles) => {
+  return (req, res, next) => {
+    // roles ['admin', 'lead-guide']. role='user'
+    if (!roles.includes(req.user.role)) {
+      return next(
+        new AppError("You do not have permission to perform this action", 403)
+      );
+    }
+
+    next();
+  };
+};
+
+const createSendToken = async (payLoad, req, res) => {
+  const accessToken = await JwtProvider.generateToken(
+    payLoad,
+    process.env.ACCESS_TOKEN_SIGNATURE,
+    "3h"
+  );
+  const refreshToken = await JwtProvider.generateToken(
+    payLoad,
+    process.env.REFRESH_TOKEN_SIGNATURE,
+    "30 days"
+  );
+  res.cookie("accessToken", accessToken, {
+    maxAge: ms("30 days"),
+    httpOnly: true,
+    secure: true,
+    sameSite: "none"
+  });
+  res.cookie("refreshToken", refreshToken, {
+    maxAge: ms("30 days"),
+    httpOnly: true,
+    secure: true,
+    sameSite: "none"
+  });
+  res.clearCookie("__sbref");
+  res.status(StatusCodes.OK).json({ ...payLoad, accessToken, refreshToken });
+};
+
+const authController = { login, logout, refreshToken, register, restrictTo };
 module.exports = authController;
