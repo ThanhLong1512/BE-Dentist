@@ -30,13 +30,27 @@ const getAppointment = catchAsync(async (req, res, next) => {
   });
 });
 const createAppointment = catchAsync(async (req, res, next) => {
-  const newAppointment = await Appointment.create(req.body);
-  res.status(201).json({
-    status: "success",
-    data: {
-      appointment: newAppointment
-    }
-  });
+  const { service, Date } = req.body;
+ 
+    const patientId = req.user.id; 
+    console.log(patientId);
+    
+    const appointment = await Appointment.create({
+      patient: patientId,
+      service: service, 
+      Date: Date
+    });
+
+    const populatedAppointment = await Appointment.findById(appointment._id)
+      .populate('patient', 'name email phone') 
+      .populate('service', 'nameService priceService');
+
+    res.status(201).json({
+      status: "success",
+      data: {
+        appointment: populatedAppointment
+      }
+    });
 });
 
 const updateAppointment = catchAsync(async (req, res, next) => {

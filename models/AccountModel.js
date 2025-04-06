@@ -27,7 +27,6 @@ const accountSchema = new mongoose.Schema({
     type: String,
     required: [true, "Please provide a password"],
     minlength: 8,
-    select: false
   },
   passwordConfirm: {
     type: String,
@@ -38,12 +37,19 @@ const accountSchema = new mongoose.Schema({
         return el === this.password;
       },
       message: "Passwords are not the same!"
-    }
+    },
+    select: false
   },
   isLocked: {
     type: Boolean,
     default: true,
-    select: false
+  }
+},{
+  toJSON: {
+    transform: function(doc, ret) {
+      delete ret.__v;
+      return ret;
+    }
   }
 });
 

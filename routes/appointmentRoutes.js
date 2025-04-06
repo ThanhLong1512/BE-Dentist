@@ -10,11 +10,11 @@ Router.use(authMiddleware.isAuthorized);
 Router.route("/")
   .get(appointmentController.getAppointments)
   .post(
-    authController.restrictTo("user"),
+    // authController.restrictTo("user"),
     appointmentController.createAppointment
   );
 // Middleware to allow accessed routes for admin and user roles
-Router.use(authController.restrictTo("admin", "user"));
+// Router.use(authController.restrictTo("admin", "user"));
 
 Router.route("/:id")
   .get(appointmentController.getAppointment)

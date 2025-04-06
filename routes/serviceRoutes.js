@@ -5,12 +5,13 @@ const authController = require("../controllers/authController");
 
 const Router = express.Router();
 
-Router.use(authMiddleware.isAuthorized); // Apply authentication middleware to all routes
+
 
 // Define routes for service-related operations
 Router.route("/")
   .get(servicesController.getServices)
   .post(servicesController.createService);
+Router.use(authMiddleware.isAuthorized);
 Router.route("/:id")
   .get(servicesController.getServiceById)
   .put(servicesController.updateService)

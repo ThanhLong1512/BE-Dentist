@@ -1,5 +1,5 @@
 const Employee = require("../models/EmployeeModel");
-const sevice = require("../models/ServicesModel");
+const service = require("../models/ServicesModel");
 
 exports.getEmployees = async (req, res) => {
   try {
@@ -17,7 +17,12 @@ exports.createEmployee = async (req, res) => {
   try {
     const employee = new Employee(req.body);
     await employee.save();
-    res.status(201).json(employee);
+
+    const populatedEmployee = await Employee.findById(employee._id).populate(
+      "service"
+    );
+
+    res.status(201).json(populatedEmployee); // Trả về employee đã có service
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -29,6 +34,7 @@ exports.getEmployeeById = async (req, res) => {
     if (!employee)
       return res.status(404).json({ message: "Employee not found" });
     res.json(employee);
+    
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -41,7 +47,11 @@ exports.updateEmployee = async (req, res) => {
     });
     if (!employee)
       return res.status(404).json({ message: "Employee not found" });
-    res.json(employee);
+    await employee.save();
+    const populatedEmployee = await Employee.findById(req.params.id).populate(
+      "service"
+    );
+    res.json(populatedEmployee);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

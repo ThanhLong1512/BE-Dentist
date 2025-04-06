@@ -23,11 +23,11 @@ const isAuthorized = async (req, res, next) => {
   // }
 
   try {
-    const accessTokenDecoded = await JwtProvider.verifyToken(
+    const decoded = await JwtProvider.verifyToken(
       accessTokenFromCookie,
       process.env.ACCESS_TOKEN_SIGNATURE
     );
-    req.jwtDecoded = accessTokenDecoded;
+    req.user = decoded;
     next();
   } catch (error) {
     console.log("Error from authMiddleware:", error);
