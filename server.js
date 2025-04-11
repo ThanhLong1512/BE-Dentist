@@ -65,7 +65,6 @@ const START_SERVER = async () => {
   }
 };
 
-// Start the server
 (async () => {
   console.log("Starting Server...");
   try {

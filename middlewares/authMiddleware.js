@@ -2,7 +2,6 @@ const { StatusCodes } = require("http-status-codes");
 const JwtProvider = require("../providers/JwtProvider");
 
 const isAuthorized = async (req, res, next) => {
-  // // Cách 1: Lấy accessToken nằm trong request cookies phía client - withCredentials nhận được từ phía FE có hợp lệ hay
   const accessTokenFromCookie = req.cookies?.accessToken;
   if (!accessTokenFromCookie) {
     res

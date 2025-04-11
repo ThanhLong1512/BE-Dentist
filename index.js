@@ -17,6 +17,7 @@ const patientRoutes = require("./routes/patientRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
 const accountRouter = require("./routes/accountRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
+const shiftRoutes = require("./routes/shiftRoutes");    
 const corsOption = require("./config/corsOption");
 
 const app = express();
@@ -83,6 +84,7 @@ app.use("/api/v1/employees", employeeRoutes);
 app.use("/api/v1/patients", patientRoutes);
 app.use("/api/v1/services", serviceRoutes);
 app.use("/api/v1/appointments", appointmentRoutes);
+app.use("/api/v1/shifts", shiftRoutes);
 // // Import routes
 
 // Handle 404 errors

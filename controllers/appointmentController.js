@@ -1,6 +1,7 @@
 const Appointment = require("../models/AppointmentModel");
 const Patient = require("../models/PatientModel");
 const Employee = require("../models/EmployeeModel");
+const Shift = require("../models/ShiftModel");
 const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 
@@ -30,27 +31,40 @@ const getAppointment = catchAsync(async (req, res, next) => {
   });
 });
 const createAppointment = catchAsync(async (req, res, next) => {
-  const { service, Date } = req.body;
- 
-    const patientId = req.user.id; 
-    console.log(patientId);
-    
+  try {
+    const { shift, Date } = req.body;
+    const patientId = req.user.id;
+
     const appointment = await Appointment.create({
       patient: patientId,
-      service: service, 
+      shift: shift,
       Date: Date
     });
 
+    // Update shift's isBooked status
+    await Shift.findByIdAndUpdate(shift, { isBooked: true });
+
+    // Get populated appointment data
     const populatedAppointment = await Appointment.findById(appointment._id)
-      .populate('patient', 'name email phone') 
-      .populate('service', 'nameService priceService');
+      .populate('patient', 'name email phone')
+      .populate({
+        path: 'shift',
+        populate: {
+          path: 'employee',
+          populate: {
+            path: 'service'
+          }
+        }
+      });
 
     res.status(201).json({
       status: "success",
-      data: {
-        appointment: populatedAppointment
-      }
+      message: "Book appointment successfully",
     });
+  } catch (error) {
+    // If there's an error, ensure we handle it properly
+    return next(new AppError(error.message, 400));
+  }
 });
 
 const updateAppointment = catchAsync(async (req, res, next) => {

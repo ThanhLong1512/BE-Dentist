@@ -3,54 +3,84 @@
     "employee": "5f8d1a2ba2dd5d6f7a8b9c0d",
     "DayOfWeek": "Monday",
     "StartTime": "08:00",
-    "EndTime": "16:00"
+    "EndTime": "16:00",
+    "isBooked": true
   },
   {
     "employee": "5f8d1a2ba2dd5d6f7a8b9c0e",
     "DayOfWeek": "Wednesday",
     "StartTime": "09:00",
-    "EndTime": "17:00"
+    "EndTime": "17:00",
+    "isBooked": true
   },
   {
     "employee": "5f8d1a2ba2dd5d6f7a8b9c0f",
     "DayOfWeek": "Tuesday",
-    "StartTime": "08:30",
-    "EndTime": "16:30"
+    "StartTime": "07:30",
+    "EndTime": "09:30",
+    "isBooked": false
+  },
+  {
+    "employee": "5f8d1a2ba2dd5d6f7a8b9c0f",
+    "DayOfWeek": "Tuesday",
+    "StartTime": "10:00",
+    "EndTime": "11:30",
+    "isBooked": false
+  },
+  {
+    "employee": "5f8d1a2ba2dd5d6f7a8b9c0f",
+    "DayOfWeek": "Tuesday",
+    "StartTime": "13:00",
+    "EndTime": "14:30",
+    "isBooked": false
+  },
+  {
+    "employee": "5f8d1a2ba2dd5d6f7a8b9c0f",
+    "DayOfWeek": "Tuesday",
+    "StartTime": "15:00",
+    "EndTime": "16:30",
+    "isBooked": false
   },
   {
     "employee": "5f8d1a2ba2dd5d6f7a8b9c10",
     "DayOfWeek": "Thursday",
     "StartTime": "09:30",
-    "EndTime": "17:30"
+    "EndTime": "17:30",
+    "isBooked": false
   },
   {
     "employee": "5f8d1a2ba2dd5d6f7a8b9c11",
     "DayOfWeek": "Friday",
     "StartTime": "08:00",
-    "EndTime": "16:00"
+    "EndTime": "16:00",
+    "isBooked": false
   },
   {
     "employee": "5f8d1a2ba2dd5d6f7a8b9c12",
     "DayOfWeek": "Monday",
     "StartTime": "10:00",
-    "EndTime": "18:00"
+    "EndTime": "18:00",
+    "isBooked": false
   },
   {
     "employee": "5f8d1a2ba2dd5d6f7a8b9c13",
     "DayOfWeek": "Tuesday",
     "StartTime": "09:00",
-    "EndTime": "17:00"
+    "EndTime": "17:00",
+    "isBooked": false
   },
   {
     "employee": "5f8d1a2ba2dd5d6f7a8b9c0d",
     "DayOfWeek": "Thursday",
     "StartTime": "08:00",
-    "EndTime": "16:00"
+    "EndTime": "16:00",
+    "isBooked": false
   },
   {
     "employee": "5f8d1a2ba2dd5d6f7a8b9c0e",
     "DayOfWeek": "Friday",
     "StartTime": "09:00",
-    "EndTime": "17:00"
+    "EndTime": "17:00",
+    "isBooked": false
   }
 ]
