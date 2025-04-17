@@ -1,9 +1,12 @@
 const { StatusCodes } = require("http-status-codes");
+const QRCode = require("qrcode");
+const { authenticator } = require("otplib");
 const ms = require("ms");
 const JwtProvider = require("./../providers/JwtProvider");
 const CatchAsync = require("./../utils/catchAsync");
 const AppError = require("../utils/appError");
 const Account = require("../models/AccountModel");
+const TwoFA = require("../models/TwoFAModel");
 
 const login = CatchAsync(async (req, res, next) => {
   const { email, password } = req.body;
@@ -141,6 +144,47 @@ const createSendToken = async (payLoad, req, res) => {
   res.clearCookie("__sbref");
   res.status(StatusCodes.OK).json({ ...payLoad, accessToken, refreshToken });
 };
+const get2FA_QRCode = CatchAsync(async (req, res) => {
+  const user = await Account.findById(req.user.id);
+  if (!user) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      message: "User not found"
+    });
+  }
+  console.log(user._id);
+  let twoFactorSecretKeyValue = null;
+  const twoFactorSecretKey = await TwoFA.findOne({
+    user_id: user._id
+  });
 
-const authController = { login, logout, refreshToken, register, restrictTo };
+  if (!twoFactorSecretKey) {
+    const newTwoFA = await TwoFA.create({
+      secret: authenticator.generateSecret(),
+      user_id: user._id
+    });
+    twoFactorSecretKeyValue = newTwoFA.secret;
+  } else {
+    twoFactorSecretKeyValue = twoFactorSecretKey.secret;
+  }
+  console.log(twoFactorSecretKeyValue, process.env.SERVICE_NAME_2FA);
+  const otpAuthToken = authenticator.keyuri(
+    user.name,
+    process.env.SERVICE_NAME_2FA,
+    twoFactorSecretKeyValue
+  );
+  const qrCodeImage = await QRCode.toDataURL(otpAuthToken);
+
+  res.status(StatusCodes.OK).json({
+    message: "Get 2FA QR code successfully",
+    data: qrCodeImage
+  });
+});
+const authController = {
+  login,
+  logout,
+  refreshToken,
+  register,
+  restrictTo,
+  get2FA_QRCode
+};
 module.exports = authController;

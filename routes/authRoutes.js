@@ -12,5 +12,10 @@ Router.put(
   authController.refreshToken
 );
 Router.post("/register", authController.register);
+Router.get(
+  "/get_2fa_qr_code",
+  authMiddleware.isAuthorized,
+  authController.get2FA_QRCode
+);
 
 module.exports = Router;
