@@ -7,6 +7,7 @@ const CatchAsync = require("./../utils/catchAsync");
 const AppError = require("../utils/appError");
 const Account = require("../models/AccountModel");
 const TwoFA = require("../models/TwoFAModel");
+const AccountSession = require("../models/AccountsSessionModel");
 
 const login = CatchAsync(async (req, res, next) => {
   const { email, password } = req.body;
@@ -151,7 +152,6 @@ const get2FA_QRCode = CatchAsync(async (req, res) => {
       message: "User not found"
     });
   }
-  console.log(user._id);
   let twoFactorSecretKeyValue = null;
   const twoFactorSecretKey = await TwoFA.findOne({
     user_id: user._id
@@ -166,7 +166,6 @@ const get2FA_QRCode = CatchAsync(async (req, res) => {
   } else {
     twoFactorSecretKeyValue = twoFactorSecretKey.secret;
   }
-  console.log(twoFactorSecretKeyValue, process.env.SERVICE_NAME_2FA);
   const otpAuthToken = authenticator.keyuri(
     user.name,
     process.env.SERVICE_NAME_2FA,
@@ -179,12 +178,62 @@ const get2FA_QRCode = CatchAsync(async (req, res) => {
     data: qrCodeImage
   });
 });
+const setUp2FA = CatchAsync(async (req, res) => {
+  const user = await Account.findById(req.user.id);
+  if (!user) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      message: "User ID not found"
+    });
+  }
+  const twoFactorSecretKey = await TwoFA.findOne({
+    user_id: user._id
+  });
+  if (!twoFactorSecretKey) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      message: "2FA secret key not found"
+    });
+  }
+  const otpTokenClient = req.body.otpTokenClient;
+  if (!otpTokenClient) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Please provide OTP code"
+    });
+  }
+  const isValid = authenticator.verify({
+    token: otpTokenClient,
+    secret: twoFactorSecretKey.secret
+  });
+  if (!isValid) {
+    return res.status(StatusCodes.NOT_ACCEPTABLE).json({
+      message: "Invalid OTP code"
+    });
+  }
+  const updatedUser = await Account.updateOne(
+    { _id: user._id },
+    { require_2FA: true, isLocked: false }
+  );
+  const newAccountSession = await AccountSession.create({
+    user_id: user._id,
+    device_id: req.headers["user-agent"], // Lấy thông tin thiết bị từ header
+    is_2fa_verified: true,
+    last_login: new Date().valueOf()
+  });
+  res.status(StatusCodes.OK).json({
+    message: "2FA setup successfully",
+    data: {
+      user: updatedUser,
+      is_2fa_verified: newAccountSession.is_2fa_verified,
+      last_login: newAccountSession.last_login
+    }
+  });
+});
 const authController = {
   login,
   logout,
   refreshToken,
   register,
   restrictTo,
-  get2FA_QRCode
+  get2FA_QRCode,
+  setUp2FA
 };
 module.exports = authController;
