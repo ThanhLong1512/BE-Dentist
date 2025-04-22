@@ -17,7 +17,7 @@ const patientRoutes = require("./routes/patientRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
 const accountRouter = require("./routes/accountRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
-const shiftRoutes = require("./routes/shiftRoutes");    
+const shiftRoutes = require("./routes/shiftRoutes");
 const corsOption = require("./config/corsOption");
 
 const app = express();
@@ -40,15 +40,15 @@ app.options("*", cors());
 app.use(helmet());
 
 // Rate limiting middleware with custom keyGenerator
-const limiter = rateLimit({
-  max: 100,
-  windowMs: 60 * 60 * 1000,
-  message: "Too many requests from this IP, please try again in an hour!",
-  keyGenerator: req => {
-    return req.headers["x-forwarded-for"]?.split(",")[0] || req.ip;
-  }
-});
-app.use("/api", limiter);
+// const limiter = rateLimit({
+//   max: 100,
+//   windowMs: 60 * 60 * 1000,
+//   message: "Too many requests from this IP, please try again in an hour!",
+//   keyGenerator: req => {
+//     return req.headers["x-forwarded-for"]?.split(",")[0] || req.ip;
+//   }
+// });
+// app.use("/api", limiter);
 
 // Parse JSON and URL-encoded bodies
 app.use(express.json({ limit: "10kb" }));

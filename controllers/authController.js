@@ -46,7 +46,7 @@ const logout = async (req, res) => {
 const refreshToken = async (req, res) => {
   try {
     // Cách 1: Lấy refreshToken từ Cookie đã đính kèm vào request
-    const refreshTokenFromCookie = req.cookie?.refreshToken;
+    // const refreshTokenFromCookie = req.cookie?.refreshToken;
     // Cách 2: Từ localStorage phía FE sẽ truyền vào body khi gọi API
     const refreshTokenFromBody = req.body?.refreshToken;
     // Verify Refresh Token
