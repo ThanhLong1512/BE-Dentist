@@ -45,26 +45,24 @@ const logout = async (req, res) => {
 
 const refreshToken = async (req, res) => {
   try {
-    // Cách 1: Lấy refreshToken từ Cookie đã đính kèm vào request
-    // const refreshTokenFromCookie = req.cookie?.refreshToken;
-    // Cách 2: Từ localStorage phía FE sẽ truyền vào body khi gọi API
-    const refreshTokenFromBody = req.body?.refreshToken;
+    const refreshTokenFromCookie = req.cookie?.refreshToken;
     // Verify Refresh Token
     const refreshTokenDecoded = await JwtProvider.verifyToken(
-      refreshTokenFromBody,
+      refreshTokenFromCookie,
       process.env.REFRESH_TOKEN_SIGNATURE
     );
     const payloadFromDecoded = {
       id: refreshTokenDecoded.id,
       email: refreshTokenDecoded.email,
       role: refreshTokenDecoded.role,
-      password: refreshTokenDecoded.password
+      password: refreshTokenDecoded.password,
+      require_2FA: refreshTokenDecoded.require_2FA
     };
 
     const accessTokenNew = await JwtProvider.generateToken(
       payloadFromDecoded,
       process.env.ACCESS_TOKEN_SIGNATURE,
-      "1h"
+      "10 days"
     );
     res.cookie("accessToken", accessTokenNew, {
       maxAge: ms("30 days"),
@@ -123,7 +121,7 @@ const createSendToken = async (payLoad, req, res) => {
   const accessToken = await JwtProvider.generateToken(
     payLoad,
     process.env.ACCESS_TOKEN_SIGNATURE,
-    "3h"
+    "10 days"
   );
   const refreshToken = await JwtProvider.generateToken(
     payLoad,
@@ -199,6 +197,7 @@ const setUp2FA = CatchAsync(async (req, res) => {
       message: "Please provide OTP code"
     });
   }
+  // console.log("otpTokenClient: ", twoFactorSecretKey.secret);
   const isValid = authenticator.verify({
     token: otpTokenClient,
     secret: twoFactorSecretKey.secret
@@ -210,11 +209,11 @@ const setUp2FA = CatchAsync(async (req, res) => {
   }
   const updatedUser = await Account.updateOne(
     { _id: user._id },
-    { require_2FA: true, isLocked: false }
+    { require_2FA: true }
   );
   const newAccountSession = await AccountSession.create({
     user_id: user._id,
-    device_id: req.headers["user-agent"], // Lấy thông tin thiết bị từ header
+    device_id: req.headers["user-agent"],
     is_2fa_verified: true,
     last_login: new Date().valueOf()
   });

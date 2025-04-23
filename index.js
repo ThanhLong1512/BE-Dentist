@@ -23,7 +23,7 @@ const corsOption = require("./config/corsOption");
 const app = express();
 
 // Set timeout to 10 seconds
-app.use(timeout("10s"));
+// app.use(timeout("10s"));
 
 // Trust only the loopback interface (localhost)
 app.set("trust proxy", "loopback");
