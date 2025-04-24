@@ -23,8 +23,8 @@ const login = CatchAsync(async (req, res, next) => {
   const payLoad = {
     id: user._id,
     email: user.email,
-    password: user.password,
-    role: user.role
+    role: user.role,
+    require_2FA: user.require_2FA
   };
 
   // If everything is oke, send token to client
@@ -207,9 +207,10 @@ const setUp2FA = CatchAsync(async (req, res) => {
       message: "Invalid OTP code"
     });
   }
-  const updatedUser = await Account.updateOne(
+  const updatedUser = await Account.findByIdAndUpdate(
     { _id: user._id },
-    { require_2FA: true }
+    { require_2FA: true },
+    { new: true }
   );
   const newAccountSession = await AccountSession.create({
     user_id: user._id,
