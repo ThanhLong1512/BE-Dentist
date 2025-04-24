@@ -19,12 +19,20 @@ const login = CatchAsync(async (req, res, next) => {
   if (!user) {
     return next(new AppError("Incorrect email or password", 401));
   }
+  const newAccountSession = await AccountSession.create({
+    user_id: user._id,
+    device_id: req.headers["user-agent"],
+    is_2fa_verified: false,
+    last_login: new Date().valueOf()
+  });
 
   const payLoad = {
     id: user._id,
     email: user.email,
     role: user.role,
-    require_2FA: user.require_2FA
+    require_2FA: user.require_2FA,
+    is_2fa_verified: newAccountSession.is_2fa_verified,
+    last_login: newAccountSession.last_login
   };
 
   // If everything is oke, send token to client
@@ -33,6 +41,11 @@ const login = CatchAsync(async (req, res, next) => {
 
 const logout = async (req, res) => {
   try {
+    // Xóa Session trong DB
+    await AccountSession.findOneAndDelete({
+      user_id: req.user.id,
+      device_id: req.headers["user-agent"]
+    });
     // Xóa Cookie
     res.clearCookie("accessToken");
     res.clearCookie("refreshToken");
