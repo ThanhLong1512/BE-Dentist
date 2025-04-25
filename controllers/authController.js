@@ -1,8 +1,10 @@
 const { StatusCodes } = require("http-status-codes");
 const QRCode = require("qrcode");
 const { authenticator } = require("otplib");
+const { OAuth2Client } = require("google-auth-library");
 const ms = require("ms");
 const JwtProvider = require("./../providers/JwtProvider");
+const GoogleProvider = require("./../providers/GoogleProvider");
 const CatchAsync = require("./../utils/catchAsync");
 const AppError = require("../utils/appError");
 const Account = require("../models/AccountModel");
@@ -287,7 +289,15 @@ const verify2FA = CatchAsync(async (req, res) => {
     }
   });
 });
-
+const loginGoogle = async (req, res) => {
+  const { token } = req.body;
+  const payLoad = await GoogleProvider.verify(token);
+  console.log("payLoad: ", payLoad);
+  res.status(StatusCodes.OK).json({
+    message: "Login Google successfully",
+    data: payLoad
+  });
+};
 const authController = {
   login,
   logout,
@@ -296,6 +306,7 @@ const authController = {
   restrictTo,
   get2FA_QRCode,
   setUp2FA,
-  verify2FA
+  verify2FA,
+  loginGoogle
 };
 module.exports = authController;

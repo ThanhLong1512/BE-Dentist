@@ -19,4 +19,5 @@ Router.get(
 );
 Router.post("/setUp2FA", authMiddleware.isAuthorized, authController.setUp2FA);
 Router.put("/verify2FA", authMiddleware.isAuthorized, authController.verify2FA);
+Router.post("/loginGoogle", authController.loginGoogle);
 module.exports = Router;
