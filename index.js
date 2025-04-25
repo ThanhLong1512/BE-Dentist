@@ -37,7 +37,11 @@ app.use(cors(corsOption));
 app.options("*", cors());
 
 // Enhance security with Helmet
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }
+  })
+);
 
 // Rate limiting middleware with custom keyGenerator
 // const limiter = rateLimit({

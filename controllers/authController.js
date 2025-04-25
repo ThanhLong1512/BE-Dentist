@@ -291,12 +291,39 @@ const verify2FA = CatchAsync(async (req, res) => {
 });
 const loginGoogle = async (req, res) => {
   const { token } = req.body;
-  const payLoad = await GoogleProvider.verify(token);
-  console.log("payLoad: ", payLoad);
-  res.status(StatusCodes.OK).json({
-    message: "Login Google successfully",
-    data: payLoad
+  const InfoGoogle = await GoogleProvider.verify(token);
+  const { name, email: googleEmail } = InfoGoogle;
+
+  const normalizedEmail = googleEmail.trim().toLowerCase();
+  const user = await Account.findOne({ email: InfoGoogle.email });
+  console.log("user: ", user);
+  let newUser;
+
+  if (!user) {
+    newUser = await Account.create({
+      name,
+      email: normalizedEmail,
+      password: normalizedEmail + process.env.GOOGLE_CLIENT_ID,
+      passwordConfirm: normalizedEmail + process.env.GOOGLE_CLIENT_ID
+    });
+  } else {
+    newUser = user;
+  }
+  const newAccountSession = await AccountSession.create({
+    user_id: newUser._id,
+    device_id: req.headers["user-agent"],
+    is_2fa_verified: false,
+    last_login: new Date().valueOf()
   });
+  const payLoad = {
+    id: newUser._id,
+    email: newUser.email,
+    role: newUser.role,
+    require_2FA: newUser.require_2FA,
+    is_2fa_verified: newAccountSession.is_2fa_verified,
+    last_login: newAccountSession.last_login
+  };
+  await createSendToken(payLoad, req, res);
 };
 const authController = {
   login,
