@@ -240,6 +240,54 @@ const setUp2FA = CatchAsync(async (req, res) => {
     }
   });
 });
+const verify2FA = CatchAsync(async (req, res) => {
+  const user = await Account.findById(req.user.id);
+  if (!user) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      message: "User ID not found"
+    });
+  }
+  const twoFactorSecretKey = await TwoFA.findOne({
+    user_id: user._id
+  });
+  if (!twoFactorSecretKey) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      message: "2FA secret key not found"
+    });
+  }
+  const otpTokenClient = req.body.otpTokenClient;
+  if (!otpTokenClient) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Please provide OTP code"
+    });
+  }
+  const isValid = authenticator.verify({
+    token: otpTokenClient,
+    secret: twoFactorSecretKey.secret
+  });
+  if (!isValid) {
+    return res.status(StatusCodes.NOT_ACCEPTABLE).json({
+      message: "Invalid OTP code"
+    });
+  }
+  const updatedAccountSession = await AccountSession.findOneAndUpdate(
+    {
+      user_id: user._id,
+      device_id: req.headers["user-agent"]
+    },
+    { is_2fa_verified: true, last_login: new Date().valueOf() },
+    { new: true }
+  );
+  res.status(StatusCodes.OK).json({
+    message: "2FA verify successfully",
+    data: {
+      user: user,
+      is_2fa_verified: updatedAccountSession.is_2fa_verified,
+      last_login: updatedAccountSession.last_login
+    }
+  });
+});
+
 const authController = {
   login,
   logout,
@@ -247,6 +295,7 @@ const authController = {
   register,
   restrictTo,
   get2FA_QRCode,
-  setUp2FA
+  setUp2FA,
+  verify2FA
 };
 module.exports = authController;

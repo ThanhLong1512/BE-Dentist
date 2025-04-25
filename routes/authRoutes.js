@@ -18,4 +18,5 @@ Router.get(
   authController.get2FA_QRCode
 );
 Router.post("/setUp2FA", authMiddleware.isAuthorized, authController.setUp2FA);
+Router.put("/verify2FA", authMiddleware.isAuthorized, authController.verify2FA);
 module.exports = Router;
