@@ -50,7 +50,14 @@ const accountSchema = new mongoose.Schema(
       default: false
     },
     googleID: {
-      type: String
+      type: String,
+      unique: true,
+      sparse: true
+    },
+    facebookID: {
+      type: String,
+      unique: true,
+      sparse: true
     }
   },
   {

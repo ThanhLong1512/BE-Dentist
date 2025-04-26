@@ -2,6 +2,7 @@ const { StatusCodes } = require("http-status-codes");
 const QRCode = require("qrcode");
 const { authenticator } = require("otplib");
 const { OAuth2Client } = require("google-auth-library");
+const axios = require("axios");
 const ms = require("ms");
 const JwtProvider = require("./../providers/JwtProvider");
 const GoogleProvider = require("./../providers/GoogleProvider");
@@ -300,7 +301,6 @@ const loginGoogle = CatchAsync(async (req, res) => {
   const user = await Account.findOne({ googleID: sub });
   console.log("user: ", user);
   let newUser;
-  s;
 
   if (!user) {
     newUser = await Account.create({
@@ -329,6 +329,52 @@ const loginGoogle = CatchAsync(async (req, res) => {
   };
   await createSendToken(payLoad, req, res);
 });
+const loginFacebook = CatchAsync(async (req, res) => {
+  const { accessToken } = req.body;
+  if (!accessToken) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Access token is required"
+    });
+  }
+  let response = await axios.get(
+    `https://graph.facebook.com/me?access_token=${accessToken}&fields=id,name,email`
+  );
+  const { id, name, email: facebookEmail } = response.data;
+  if (!id) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Invalid access token"
+    });
+  }
+  const account = await Account.findOne({ faceBookID: id });
+  let newUser;
+
+  if (!account) {
+    newUser = await Account.create({
+      name,
+      email: facebookEmail,
+      facebookID: id,
+      password: normalizedEmail + process.env.FACEBOOK_CLIENT_ID,
+      passwordConfirm: normalizedEmail + process.env.FACEBOOK_CLIENT_SECRET
+    });
+  } else {
+    newUser = account;
+  }
+  const newAccountSession = await AccountSession.create({
+    user_id: newUser._id,
+    device_id: req.headers["user-agent"],
+    is_2fa_verified: false,
+    last_login: new Date().valueOf()
+  });
+  const payLoad = {
+    id: newUser._id,
+    email: newUser.email,
+    role: newUser.role,
+    require_2FA: newUser.require_2FA,
+    is_2fa_verified: newAccountSession.is_2fa_verified,
+    last_login: newAccountSession.last_login
+  };
+  await createSendToken(payLoad, req, res);
+});
 const authController = {
   login,
   logout,
@@ -338,6 +384,7 @@ const authController = {
   get2FA_QRCode,
   setUp2FA,
   verify2FA,
-  loginGoogle
+  loginGoogle,
+  loginFacebook
 };
 module.exports = authController;
