@@ -289,20 +289,24 @@ const verify2FA = CatchAsync(async (req, res) => {
     }
   });
 });
-const loginGoogle = async (req, res) => {
+const loginGoogle = CatchAsync(async (req, res) => {
   const { token } = req.body;
   const InfoGoogle = await GoogleProvider.verify(token);
-  const { name, email: googleEmail } = InfoGoogle;
-
-  const normalizedEmail = googleEmail.trim().toLowerCase();
-  const user = await Account.findOne({ email: InfoGoogle.email });
+  const { name, email: googleEmail, sub } = InfoGoogle;
+  let normalizedEmail = "";
+  if (googleEmail) {
+    normalizedEmail = googleEmail.replace(/\s/g, "").toLowerCase();
+  }
+  const user = await Account.findOne({ googleID: sub });
   console.log("user: ", user);
   let newUser;
+  s;
 
   if (!user) {
     newUser = await Account.create({
       name,
       email: normalizedEmail,
+      googleID: sub,
       password: normalizedEmail + process.env.GOOGLE_CLIENT_ID,
       passwordConfirm: normalizedEmail + process.env.GOOGLE_CLIENT_ID
     });
@@ -324,7 +328,7 @@ const loginGoogle = async (req, res) => {
     last_login: newAccountSession.last_login
   };
   await createSendToken(payLoad, req, res);
-};
+});
 const authController = {
   login,
   logout,

@@ -48,6 +48,9 @@ const accountSchema = new mongoose.Schema(
     require_2FA: {
       type: Boolean,
       default: false
+    },
+    googleID: {
+      type: String
     }
   },
   {
