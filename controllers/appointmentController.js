@@ -5,15 +5,15 @@ const Shift = require("../models/ShiftModel");
 const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 
-const getAppointments = catchAsync(async (req, res, next) => {
-  const appointments = await Appointment.find()
-    .populate("patient")
-    .populate("service");
+const getAppointments = catchAsync((req, res, next) => {
+  // const appointments = await Appointment.find()
+  //   .populate("patient")
+  //   .populate("service");
   res.status(200).json({
-    status: "success",
-    data: {
-      appointments
-    }
+    status: "success"
+    // data: {
+    //   appointments
+    // }
   });
 });
 const getAppointment = catchAsync(async (req, res, next) => {
@@ -46,20 +46,20 @@ const createAppointment = catchAsync(async (req, res, next) => {
 
     // Get populated appointment data
     const populatedAppointment = await Appointment.findById(appointment._id)
-      .populate('patient', 'name email phone')
+      .populate("patient", "name email phone")
       .populate({
-        path: 'shift',
+        path: "shift",
         populate: {
-          path: 'employee',
+          path: "employee",
           populate: {
-            path: 'service'
+            path: "service"
           }
         }
       });
 
     res.status(201).json({
       status: "success",
-      message: "Book appointment successfully",
+      message: "Book appointment successfully"
     });
   } catch (error) {
     // If there's an error, ensure we handle it properly
