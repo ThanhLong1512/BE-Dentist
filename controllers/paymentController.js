@@ -1,5 +1,12 @@
 const { StatusCodes } = require("http-status-codes");
 const CatchAsync = require("../utils/catchAsync");
+const {
+  VNPay,
+  ignoreLogger,
+  ProductCode,
+  VnpLocale,
+  dateFormat
+} = require("vnpay");
 const crypto = require("crypto");
 const axios = require("axios");
 const paymentWithMoMo = CatchAsync(async (req, res) => {
@@ -39,19 +46,10 @@ const paymentWithMoMo = CatchAsync(async (req, res) => {
     requestId +
     "&requestType=" +
     requestType;
-  //puts raw signature
-  console.log("--------------------RAW SIGNATURE----------------");
-  console.log(rawSignature);
-  //signature
-
   var signature = crypto
     .createHmac("sha256", secretkey)
     .update(rawSignature)
     .digest("hex");
-  console.log("--------------------SIGNATURE----------------");
-  console.log(signature);
-
-  //json object send to MoMo endpoint
   const requestBody = JSON.stringify({
     partnerCode: partnerCode,
     accessKey: accessKey,
@@ -85,7 +83,41 @@ const paymentWithMoMo = CatchAsync(async (req, res) => {
   });
 });
 const paymentWithZaloPay = CatchAsync(async (req, res) => {});
-const paymentWithVnPay = CatchAsync(async (req, res) => {});
+const paymentWithVnPay = CatchAsync(async (req, res) => {
+  const vnpay = new VNPay({
+    // Thông tin cấu hình bắt buộc
+    tmnCode: "2QXUI4B4",
+    secureSecret: "secret",
+    vnpayHost: "https://sandbox.vnpayment.vn",
+
+    // Cấu hình tùy chọn
+    testMode: true, // Chế độ test
+    hashAlgorithm: "SHA512", // Thuật toán mã hóa
+    enableLog: true, // Bật/tắt ghi log
+    loggerFn: ignoreLogger // Hàm xử lý log tùy chỉnh
+  });
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const paymentUrl = vnpay.buildPaymentUrl({
+    vnp_Amount: 10000,
+    vnp_IpAddr: "13.160.92.202",
+    vnp_TxnRef: "123456",
+    vnp_OrderInfo: "Thanh toan don hang 123456",
+    vnp_OrderType: ProductCode.Other,
+    vnp_ReturnUrl: "http://localhost:3000/vnpay-return",
+    vnp_Locale: VnpLocale.VN, // 'vn' hoặc 'en'
+    vnp_CreateDate: dateFormat(new Date()), // tùy chọn, mặc định là thời gian hiện tại
+    vnp_ExpireDate: dateFormat(tomorrow) // tùy chọn
+  });
+  return res.status(StatusCodes.OK).json({
+    status: "success",
+    message: "Payment with VNPay successfully",
+    data: {
+      paymentUrl
+    }
+  });
+});
 
 const paymentController = {
   paymentWithMoMo,
