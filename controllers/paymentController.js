@@ -90,7 +90,9 @@ const paymentWithMoMo = CatchAsync(async (req, res) => {
 
 const paymentWithZaloPay = CatchAsync(async (req, res) => {
   const config = zaloPayConfig;
-  const embed_data = {};
+  const embed_data = {
+    redirectUrl: "http://localhost:5173/home"
+  };
   const items = [{}];
   const transID = Math.floor(Math.random() * 1000000);
   const order = {
@@ -102,7 +104,9 @@ const paymentWithZaloPay = CatchAsync(async (req, res) => {
     embed_data: JSON.stringify(embed_data),
     amount: 50000,
     description: `Lazada - Payment for the order #${transID}`,
-    bank_code: ""
+    bank_code: "",
+    callback_url:
+      "https://1643-14-186-89-251.ngrok-free.app/api/v1/payments/callbackwithZaloPay"
   };
   const data =
     config.app_id +
@@ -148,7 +152,8 @@ const paymentWithVnPay = CatchAsync(async (req, res) => {
     vnp_TxnRef: "123456",
     vnp_OrderInfo: "Thanh toan don hang 123456",
     vnp_OrderType: ProductCode.Other,
-    vnp_ReturnUrl: "http://localhost:3000/vnpay-return",
+    vnp_ReturnUrl:
+      "https://1643-14-186-89-251.ngrok-free.app/api/v1/payments/callbackwithVNPay",
     vnp_Locale: VnpLocale.VN,
     vnp_CreateDate: dateFormat(new Date()),
     vnp_ExpireDate: dateFormat(tomorrow)
@@ -161,10 +166,53 @@ const paymentWithVnPay = CatchAsync(async (req, res) => {
     }
   });
 });
+const callbackZaloPay = CatchAsync(async (req, res) => {
+  let result = {};
+  let dataStr = req.body.data;
+  let reqMac = req.body.mac;
 
+  let mac = CryptoJS.HmacSHA256(dataStr, zaloPayConfig.key2).toString();
+
+  // kiểm tra callback hợp lệ (đến từ ZaloPay server)
+  if (reqMac !== mac) {
+    // callback không hợp lệ
+    result.return_code = -1;
+    result.return_message = "mac not equal";
+  } else {
+    // thanh toán thành công
+    // merchant cập nhật trạng thái cho đơn hàng
+    let dataJson = JSON.parse(dataStr, config.key2);
+
+    result.return_code = 1;
+    result.return_message = "success";
+  }
+
+  // thông báo kết quả cho ZaloPay server
+  res.status(200).json(result);
+});
+const callbackMoMo = CatchAsync(async (req, res) => {
+  return res.status(StatusCodes.OK).json({
+    status: "success",
+    data: {
+      payUrl: req.body
+    }
+  });
+});
+const callbackVnPay = CatchAsync(async (req, res) => {
+  const { orderInfo, resultCode } = req.query;
+  return res.status(StatusCodes.OK).json({
+    status: "success",
+    data: {
+      payUrl: req.query
+    }
+  });
+});
 const paymentController = {
   paymentWithMoMo,
   paymentWithZaloPay,
-  paymentWithVnPay
+  paymentWithVnPay,
+  callbackZaloPay,
+  callbackMoMo,
+  callbackVnPay
 };
 module.exports = paymentController;
