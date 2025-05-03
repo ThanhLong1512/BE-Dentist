@@ -8,23 +8,28 @@ const {
   dateFormat
 } = require("vnpay");
 const crypto = require("crypto");
+const CryptoJS = require("crypto-js");
+const moment = require("moment");
 const axios = require("axios");
+const {
+  momoConfig,
+  zaloPayConfig,
+  vnPayConfig
+} = require("../config/paymentConfig");
+
 const paymentWithMoMo = CatchAsync(async (req, res) => {
-  var partnerCode = "MOMO";
-  var accessKey = "F8BBA842ECF85";
-  var secretkey = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
+  var partnerCode = momoConfig.partnerCode;
+  var accessKey = momoConfig.accessKey;
+  var secretkey = momoConfig.secretKey;
   var requestId = partnerCode + new Date().getTime();
   var orderId = requestId;
-  var orderInfo = "pay with MoMo";
-  var redirectUrl = "https://momo.vn/return";
-  var ipnUrl = "https://callback.url/notify";
-  // var ipnUrl = redirectUrl = "https://webhook.site/454e7b77-f177-4ece-8236-ddf1c26ba7f8";
+  var orderInfo = momoConfig.orderInfo;
+  var redirectUrl = momoConfig.redirectUrl;
+  var ipnUrl = momoConfig.ipnUrl;
   var amount = "50000";
-  var requestType = "captureWallet";
-  var extraData = ""; //pass empty value if your merchant does not have stores
+  var requestType = momoConfig.requestType;
+  var extraData = momoConfig.extraData;
 
-  //before sign HMAC SHA256 with format
-  //accessKey=$accessKey&amount=$amount&extraData=$extraData&ipnUrl=$ipnUrl&orderId=$orderId&orderInfo=$orderInfo&partnerCode=$partnerCode&redirectUrl=$redirectUrl&requestId=$requestId&requestType=$requestType
   var rawSignature =
     "accessKey=" +
     accessKey +
@@ -76,25 +81,63 @@ const paymentWithMoMo = CatchAsync(async (req, res) => {
   );
   res.status(StatusCodes.OK).json({
     status: "success",
-    message: "Payment with MoMo successfully",
+    message: "Get Data MoMo successfully",
     data: {
       payUrl: response.data.payUrl
     }
   });
 });
-const paymentWithZaloPay = CatchAsync(async (req, res) => {});
+
+const paymentWithZaloPay = CatchAsync(async (req, res) => {
+  const config = zaloPayConfig;
+  const embed_data = {};
+  const items = [{}];
+  const transID = Math.floor(Math.random() * 1000000);
+  const order = {
+    app_id: config.app_id,
+    app_trans_id: `${moment().format("YYMMDD")}_${transID}`,
+    app_user: "user123",
+    app_time: Date.now(),
+    item: JSON.stringify(items),
+    embed_data: JSON.stringify(embed_data),
+    amount: 50000,
+    description: `Lazada - Payment for the order #${transID}`,
+    bank_code: ""
+  };
+  const data =
+    config.app_id +
+    "|" +
+    order.app_trans_id +
+    "|" +
+    order.app_user +
+    "|" +
+    order.amount +
+    "|" +
+    order.app_time +
+    "|" +
+    order.embed_data +
+    "|" +
+    order.item;
+  order.mac = CryptoJS.HmacSHA256(data, config.key1).toString();
+  const result = await axios.post(config.endpoint, null, { params: order });
+  return res.status(StatusCodes.OK).json({
+    status: "success",
+    message: "Get Data ZaloPay successfully",
+    data: {
+      payUrl: result.data.order_url
+    }
+  });
+});
+
 const paymentWithVnPay = CatchAsync(async (req, res) => {
   const vnpay = new VNPay({
-    // Thông tin cấu hình bắt buộc
-    tmnCode: "2QXUI4B4",
-    secureSecret: "secret",
-    vnpayHost: "https://sandbox.vnpayment.vn",
-
-    // Cấu hình tùy chọn
-    testMode: true, // Chế độ test
-    hashAlgorithm: "SHA512", // Thuật toán mã hóa
-    enableLog: true, // Bật/tắt ghi log
-    loggerFn: ignoreLogger // Hàm xử lý log tùy chỉnh
+    tmnCode: vnPayConfig.tmnCode,
+    secureSecret: vnPayConfig.secureSecret,
+    vnpayHost: vnPayConfig.vnpayHost,
+    testMode: vnPayConfig.testMode,
+    hashAlgorithm: vnPayConfig.hashAlgorithm,
+    enableLog: vnPayConfig.enableLog,
+    loggerFn: ignoreLogger
   });
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -106,13 +149,13 @@ const paymentWithVnPay = CatchAsync(async (req, res) => {
     vnp_OrderInfo: "Thanh toan don hang 123456",
     vnp_OrderType: ProductCode.Other,
     vnp_ReturnUrl: "http://localhost:3000/vnpay-return",
-    vnp_Locale: VnpLocale.VN, // 'vn' hoặc 'en'
-    vnp_CreateDate: dateFormat(new Date()), // tùy chọn, mặc định là thời gian hiện tại
-    vnp_ExpireDate: dateFormat(tomorrow) // tùy chọn
+    vnp_Locale: VnpLocale.VN,
+    vnp_CreateDate: dateFormat(new Date()),
+    vnp_ExpireDate: dateFormat(tomorrow)
   });
   return res.status(StatusCodes.OK).json({
     status: "success",
-    message: "Payment with VNPay successfully",
+    message: "Get Data VnPay successfully",
     data: {
       paymentUrl
     }
