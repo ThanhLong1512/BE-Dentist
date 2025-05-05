@@ -23,4 +23,5 @@ Router.put("/verify2FA", authMiddleware.isAuthorized, authController.verify2FA);
 Router.post("/loginGoogle", authController.loginGoogle);
 Router.post("/loginFacebook", authController.loginFacebook);
 Router.post("/send_recovery_email", authController.sendRecoveryEmail);
+Router.post("/update_password", authController.updatePassword);
 module.exports = Router;

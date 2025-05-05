@@ -622,9 +622,12 @@ const htmlEmail = OTP => {
 const updatePassword = CatchAsync(async (req, res) => {
   const { email } = req.user;
   const { password, passwordConfirm } = req.body;
-
   const user = await Account.findOne({ email });
-
+  if (!user) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      message: "User not found"
+    });
+  }
   if (password !== passwordConfirm) {
     return res.status(StatusCodes.BAD_REQUEST).json({
       message: "Password and password confirm do not match"
@@ -647,6 +650,7 @@ const authController = {
   verify2FA,
   loginGoogle,
   loginFacebook,
-  sendRecoveryEmail
+  sendRecoveryEmail,
+  updatePassword
 };
 module.exports = authController;
