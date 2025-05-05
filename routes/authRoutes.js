@@ -1,6 +1,7 @@
 const express = require("express");
 const authController = require("./../controllers/authController");
 const authMiddleware = require("./../middlewares/authMiddleware");
+const { api } = require("../providers/CloudinaryProvider");
 
 const Router = express.Router();
 
@@ -21,4 +22,5 @@ Router.post("/setUp2FA", authMiddleware.isAuthorized, authController.setUp2FA);
 Router.put("/verify2FA", authMiddleware.isAuthorized, authController.verify2FA);
 Router.post("/loginGoogle", authController.loginGoogle);
 Router.post("/loginFacebook", authController.loginFacebook);
+Router.post("/send_recovery_email", authController.sendRecoveryEmail);
 module.exports = Router;

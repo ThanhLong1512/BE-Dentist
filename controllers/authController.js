@@ -4,6 +4,7 @@ const { authenticator } = require("otplib");
 const { OAuth2Client } = require("google-auth-library");
 const axios = require("axios");
 const ms = require("ms");
+const nodemailer = require("nodemailer");
 const JwtProvider = require("./../providers/JwtProvider");
 const GoogleProvider = require("./../providers/GoogleProvider");
 const CatchAsync = require("./../utils/catchAsync");
@@ -19,8 +20,16 @@ const login = CatchAsync(async (req, res, next) => {
   }
   const user = await Account.findOne({ email }).select("+password");
 
-  if (!user) {
-    return next(new AppError("Incorrect email or password", 401));
+  if (!user || !(await user.correctPassword(password, user.password))) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      message: "Incorrect email or password"
+    });
+  }
+  if (user.isLocked) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      message:
+        "Your account has been locked. Please contact admin for more information."
+    });
   }
   const newAccountSession = await AccountSession.create({
     user_id: user._id,
@@ -38,7 +47,6 @@ const login = CatchAsync(async (req, res, next) => {
     last_login: newAccountSession.last_login
   };
 
-  // If everything is oke, send token to client
   await createSendToken(payLoad, req, res);
 });
 
@@ -101,6 +109,7 @@ const register = CatchAsync(async (req, res) => {
       message: "Email already exists. Please use another email!"
     });
   }
+
   // WHEN I USE CREATE ACCOUNT.create(), it have a few helpful things like
   // - it will directly save on database
   // - it will return a promise
@@ -112,26 +121,22 @@ const register = CatchAsync(async (req, res) => {
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm
   });
+  const newAccountSession = await AccountSession.create({
+    user_id: newUser._id,
+    device_id: req.headers["user-agent"],
+    is_2fa_verified: false,
+    last_login: new Date().valueOf()
+  });
   const payLoad = {
     id: newUser._id,
     email: newUser.email,
     role: newUser.role,
-    password: newUser.password
+    require_2FA: newUser.require_2FA,
+    is_2fa_verified: newAccountSession.is_2fa_verified,
+    last_login: newAccountSession.last_login
   };
   await createSendToken(payLoad, req, res);
 });
-
-const restrictTo = (...roles) => {
-  return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return next(
-        new AppError("You do not have permission to perform this action", 403)
-      );
-    }
-
-    next();
-  };
-};
 
 const createSendToken = async (payLoad, req, res) => {
   const accessToken = await JwtProvider.generateToken(
@@ -299,8 +304,7 @@ const loginGoogle = CatchAsync(async (req, res) => {
     normalizedEmail = googleEmail.replace(/\s/g, "").toLowerCase();
   }
   const user = await Account.findOne({ googleID: sub });
-  console.log("user: ", user);
-  let newUser;
+  let newUser, payLoad;
 
   if (!user) {
     newUser = await Account.create({
@@ -310,16 +314,17 @@ const loginGoogle = CatchAsync(async (req, res) => {
       password: normalizedEmail + process.env.GOOGLE_CLIENT_ID,
       passwordConfirm: normalizedEmail + process.env.GOOGLE_CLIENT_ID
     });
+    const newAccountSession = await AccountSession.create({
+      user_id: newUser._id,
+      device_id: req.headers["user-agent"],
+      is_2fa_verified: false,
+      last_login: new Date().valueOf()
+    });
   } else {
     newUser = user;
   }
-  const newAccountSession = await AccountSession.create({
-    user_id: newUser._id,
-    device_id: req.headers["user-agent"],
-    is_2fa_verified: false,
-    last_login: new Date().valueOf()
-  });
-  const payLoad = {
+
+  payLoad = {
     id: newUser._id,
     email: newUser.email,
     role: newUser.role,
@@ -375,16 +380,273 @@ const loginFacebook = CatchAsync(async (req, res) => {
   };
   await createSendToken(payLoad, req, res);
 });
+
+function sendEmail({ recipient_email, OTP }) {
+  console.log("Email sender:", process.env.EMAIL_SENDER);
+  return new Promise((resolve, reject) => {
+    var transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_SENDER,
+        pass: process.env.EMAIL_SENDER_PASSWORD
+      }
+    });
+
+    const mail_configs = {
+      from: process.env.EMAIL_SENDER,
+      to: recipient_email,
+      subject: "CHEESE DENTAL PASSWORD RECOVERY",
+      html: htmlEmail(OTP)
+    };
+    transporter.sendMail(mail_configs, function(error, info) {
+      if (error) {
+        console.log(error);
+        return reject({ message: `An error has occured` });
+      }
+      return resolve({ message: "Email sent succesfuly" });
+    });
+  });
+}
+const sendRecoveryEmail = CatchAsync(async (req, res) => {
+  await sendEmail(req.body)
+    .then(response =>
+      res.status(200).json({
+        message: "Successfully sent email",
+        data: response
+      })
+    )
+    .catch(error => res.status(500).send(error.message));
+});
+const htmlEmail = OTP => {
+  return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phòng Khám Nha Khoa Cheese - Mã OTP</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+    
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333333;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    .header {
+      background-color: #18a4e0;
+      padding: 30px 20px;
+      text-align: center;
+    }
+    
+    .logo {
+      font-size: 28px;
+      font-weight: 700;
+      color: white;
+      letter-spacing: 1px;
+    }
+    
+    .logo span {
+      color: #ffcc29;
+    }
+    
+    .tooth-icon {
+      font-size: 24px;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    
+    .content {
+      padding: 40px 30px;
+      background-color: #ffffff;
+    }
+    
+    .greeting {
+      font-size: 22px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+    
+    .message {
+      font-size: 16px;
+      margin-bottom: 30px;
+      color: #555;
+    }
+    
+    .otp-box {
+      background-color: #f8f9fa;
+      border: 2px dashed #18a4e0;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      margin: 30px 0;
+    }
+    
+    .otp-code {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 5px;
+      color: #18a4e0;
+    }
+    
+    .note {
+      font-size: 14px;
+      color: #777;
+      margin-top: 10px;
+      font-style: italic;
+    }
+    
+    .divider {
+      height: 1px;
+      background-color: #eaeaea;
+      margin: 30px 0;
+    }
+    
+    .footer {
+      padding: 20px 30px;
+      background-color: #f8f9fa;
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    .contact-info {
+      margin-top: 15px;
+    }
+    
+    .contact-item {
+      margin-bottom: 5px;
+    }
+    
+    .highlight {
+      color: #18a4e0;
+      font-weight: 500;
+    }
+    
+    .social-icons {
+      margin-top: 20px;
+    }
+    
+    .social-icons a {
+      display: inline-block;
+      margin: 0 8px;
+      color: #18a4e0;
+      text-decoration: none;
+    }
+    
+    .cta-button {
+      display: inline-block;
+      background-color: #18a4e0;
+      color: white;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      font-weight: 500;
+      margin-top: 20px;
+      transition: background-color 0.3s;
+    }
+    
+    .cta-button:hover {
+      background-color: #1493c9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">
+        <span class="tooth-icon">🦷</span> PHÒNG KHÁM NHA KHOA <span>CHEESE</span>
+      </div>
+    </div>
+    
+    <div class="content">
+      <div class="greeting">Xin chào quý khách,</div>
+      
+      <div class="message">
+        Cảm ơn quý khách đã tin tưởng và lựa chọn dịch vụ của <span class="highlight">Phòng Khám Nha Khoa Cheese</span>. Để hoàn tất quá trình xác thực, vui lòng sử dụng mã OTP dưới đây:
+      </div>
+      
+      <div class="otp-box">
+        <div class="otp-code">${OTP}</div>
+        <div class="note">Mã OTP có hiệu lực trong vòng 5 phút</div>
+      </div>
+      
+      <div class="message">
+        Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này hoặc liên hệ ngay với chúng tôi để được hỗ trợ.
+      </div>
+      
+      <a href="https://cheesedental.com/appointments" class="cta-button">Đặt Lịch Khám</a>
+      
+      <div class="divider"></div>
+      
+      <div class="message">
+        Chúng tôi luôn sẵn sàng phục vụ và mang đến cho quý khách những trải nghiệm tốt nhất với dịch vụ nha khoa chất lượng cao.
+      </div>
+    </div>
+    
+    <div class="footer">
+      <div><strong>PHÒNG KHÁM NHA KHOA CHEESE</strong></div>
+      
+      <div class="contact-info">
+        <div class="contact-item">📍 123 Nguyễn Huệ, Quận 1, TP.HCM</div>
+        <div class="contact-item">📞 0987.654.321</div>
+        <div class="contact-item">✉️ info@cheesedental.com</div>
+        <div class="contact-item">🌐 www.cheesedental.com</div>
+      </div>
+      
+      <div class="social-icons">
+        <a href="#">Facebook</a> | <a href="#">Instagram</a> | <a href="#">YouTube</a> | <a href="#">Zalo</a>
+      </div>
+      
+      <div class="note" style="margin-top: 20px;">
+        © 2025 Phòng Khám Nha Khoa Cheese. Tất cả các quyền được bảo lưu.
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+};
+const updatePassword = CatchAsync(async (req, res) => {
+  const { email } = req.user;
+  const { password, passwordConfirm } = req.body;
+
+  const user = await Account.findOne({ email });
+
+  if (password !== passwordConfirm) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Password and password confirm do not match"
+    });
+  }
+
+  user.password = req.body.password;
+  user.save();
+  res.status(StatusCodes.OK).json({
+    message: "Password updated successfully"
+  });
+});
 const authController = {
   login,
   logout,
   refreshToken,
   register,
-  restrictTo,
   get2FA_QRCode,
   setUp2FA,
   verify2FA,
   loginGoogle,
-  loginFacebook
+  loginFacebook,
+  sendRecoveryEmail
 };
 module.exports = authController;

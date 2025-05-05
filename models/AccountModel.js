@@ -43,7 +43,7 @@ const accountSchema = new mongoose.Schema(
     },
     isLocked: {
       type: Boolean,
-      default: true
+      default: false
     },
     require_2FA: {
       type: Boolean,
@@ -70,29 +70,14 @@ const accountSchema = new mongoose.Schema(
   }
 );
 
-// // Middleware hash mật khẩu trước khi lưu
-// accountSchema.pre("save", async function(next) {
-//   // Chỉ chạy khi mật khẩu được thay đổi
-//   if (!this.isModified("password")) return next();
-
-//   // Hash mật khẩu với cost của 12
-//   this.password = await bcrypt.hash(this.password, 12);
-
-//   // Xóa trường passwordConfirm
-//   this.passwordConfirm = undefined;
-//   next();
-// });
+// Middleware hash mật khẩu trước khi lưu
+accountSchema.pre("save", hashPassword);
 
 // Middleware lọc các tài khoản không hoạt động
 accountSchema.pre(/^find/, filterLockedAccounts);
 
-// // Phương thức kiểm tra mật khẩu
-// accountSchema.methods.correctPassword = async function(
-//   candidatePassword,
-//   userPassword
-// ) {
-//   return await bcrypt.compare(candidatePassword, userPassword);
-// };
+// Phương thức kiểm tra mật khẩu
+accountSchema.methods.correctPassword = correctPassword;
 
 const Account = mongoose.model("Account", accountSchema);
 
