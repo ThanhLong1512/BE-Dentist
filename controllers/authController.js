@@ -382,7 +382,6 @@ const loginFacebook = CatchAsync(async (req, res) => {
 });
 
 function sendEmail({ recipient_email, OTP }) {
-  console.log("Email sender:", process.env.EMAIL_SENDER);
   return new Promise((resolve, reject) => {
     var transporter = nodemailer.createTransport({
       service: "gmail",
@@ -619,21 +618,14 @@ const htmlEmail = OTP => {
 </body>
 </html>`;
 };
-const updatePassword = CatchAsync(async (req, res) => {
-  const { email } = req.user;
-  const { password, passwordConfirm } = req.body;
+const resetPassword = CatchAsync(async (req, res) => {
+  const { password, passwordConfirm, email } = req.body;
   const user = await Account.findOne({ email });
   if (!user) {
     return res.status(StatusCodes.NOT_FOUND).json({
-      message: "User not found"
+      message: "Your Email is not exist. Please check again!"
     });
   }
-  if (password !== passwordConfirm) {
-    return res.status(StatusCodes.BAD_REQUEST).json({
-      message: "Password and password confirm do not match"
-    });
-  }
-
   user.password = req.body.password;
   user.save();
   res.status(StatusCodes.OK).json({
@@ -651,6 +643,6 @@ const authController = {
   loginGoogle,
   loginFacebook,
   sendRecoveryEmail,
-  updatePassword
+  resetPassword
 };
 module.exports = authController;
