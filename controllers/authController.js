@@ -52,14 +52,17 @@ const login = CatchAsync(async (req, res, next) => {
 
 const logout = async (req, res) => {
   try {
-    // Xóa Session trong DB
-    await AccountSession.findOneAndDelete({
-      user_id: req.user.id,
-      device_id: req.headers["user-agent"]
-    });
+    const user = await Account.findById(req.user.id);
+    if (!user) {
+      // Xóa Session trong DB
+      await AccountSession.findOneAndDelete({
+        user_id: req.user.id,
+        device_id: req.headers["user-agent"]
+      });
+      res.clearCookie("accessToken");
+      res.clearCookie("refreshToken");
+    }
     // Xóa Cookie
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
     res.status(StatusCodes.OK).json({ message: "Logout API success" });
   } catch (error) {
     //
