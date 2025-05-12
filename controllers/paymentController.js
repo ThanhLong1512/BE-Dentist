@@ -11,6 +11,7 @@ const crypto = require("crypto");
 const CryptoJS = require("crypto-js");
 const moment = require("moment");
 const axios = require("axios");
+const Account = require("../models/AccountModel");
 const {
   momoConfig,
   zaloPayConfig,
@@ -18,6 +19,13 @@ const {
 } = require("../config/paymentConfig");
 
 const paymentWithMoMo = CatchAsync(async (req, res) => {
+  const user = Account.findOne({ where: { id: req.user.id } });
+  if (!user) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      status: "fail",
+      message: "User not found"
+    });
+  }
   var partnerCode = momoConfig.partnerCode;
   var accessKey = momoConfig.accessKey;
   var secretkey = momoConfig.secretKey;
@@ -89,6 +97,13 @@ const paymentWithMoMo = CatchAsync(async (req, res) => {
 });
 
 const paymentWithZaloPay = CatchAsync(async (req, res) => {
+  const user = Account.findOne({ where: { id: req.user.id } });
+  if (!user) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      status: "fail",
+      message: "User not found"
+    });
+  }
   const config = zaloPayConfig;
   const embed_data = {
     redirectUrl: "http://localhost:5173/home"
@@ -134,6 +149,13 @@ const paymentWithZaloPay = CatchAsync(async (req, res) => {
 });
 
 const paymentWithVnPay = CatchAsync(async (req, res) => {
+  const user = Account.findOne({ where: { id: req.user.id } });
+  if (!user) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      status: "fail",
+      message: "User not found"
+    });
+  }
   const vnpay = new VNPay({
     tmnCode: vnPayConfig.tmnCode,
     secureSecret: vnPayConfig.secureSecret,
