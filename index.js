@@ -19,12 +19,13 @@ const accountRouter = require("./routes/accountRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
 const shiftRoutes = require("./routes/shiftRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 const corsOption = require("./config/corsOption");
 
 const app = express();
 
 // Set timeout to 10 seconds
-// app.use(timeout("10s"));
+app.use(timeout("10s"));
 
 // Trust only the loopback interface (localhost)
 app.set("trust proxy", "loopback");
@@ -90,8 +91,8 @@ app.use("/api/v1/patients", patientRoutes);
 app.use("/api/v1/services", serviceRoutes);
 app.use("/api/v1/appointments", appointmentRoutes);
 app.use("/api/v1/shifts", shiftRoutes);
-app.use("/api/v1/shifts", shiftRoutes);
 app.use("/api/v1/payments", paymentRoutes);
+app.use("/api/v1/orders", orderRoutes);
 // // Import routes
 
 // Handle 404 errors

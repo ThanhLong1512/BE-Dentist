@@ -22,7 +22,7 @@ const {
 const paymentWithMoMo = CatchAsync(async (req, res) => {
   const totalPrice = req.body.totalPrice;
   const service = req.body.service;
-  const user = Account.findOne({ where: { id: req.user.id } });
+  const user = await Account.findById(req.user.id);
   if (!user) {
     return res.status(StatusCodes.UNAUTHORIZED).json({
       status: "fail",
@@ -235,7 +235,9 @@ const callbackMoMo = CatchAsync(async (req, res) => {
     console.error("Error parsing extraData:", error);
   }
   console.log("extraDataObj", extraDataObj);
-  Order.create({
+  await Order.create({
+    account: extraDataObj.account,
+    service: extraDataObj.service,
     status: req.body.message,
     paymentMethod: req.body.paymentType + req.body.partnerCode,
     totalPrice: req.body.amount

@@ -19,7 +19,7 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["successful", "cancelled"],
+      enum: ["Successful.", "Cancelled"],
       required: [true, "Please provide the order status"]
     },
     totalPrice: {
