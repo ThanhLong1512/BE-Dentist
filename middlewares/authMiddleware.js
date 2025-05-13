@@ -2,10 +2,7 @@ const { StatusCodes } = require("http-status-codes");
 const JwtProvider = require("../providers/JwtProvider");
 
 const isAuthorized = async (req, res, next) => {
-  console.log(req.cookies);
-  // // Cách 1: Lấy accessToken nằm trong request cookies phía client - withCredentials nhận được từ phía FE có hợp lệ hay
   const accessTokenFromCookie = req.cookies?.accessToken;
-  console.log("accessTokenFromCookie", accessTokenFromCookie);
   if (!accessTokenFromCookie) {
     res
       .status(StatusCodes.UNAUTHORIZED)
@@ -25,14 +22,14 @@ const isAuthorized = async (req, res, next) => {
   // }
 
   try {
-    const accessTokenDecoded = await JwtProvider.verifyToken(
+    const decoded = await JwtProvider.verifyToken(
       accessTokenFromCookie,
       process.env.ACCESS_TOKEN_SIGNATURE
     );
-    req.jwtDecoded = accessTokenDecoded;
+    req.user = decoded;
     next();
   } catch (error) {
-    console.log("Error from authMiddleware:", error);
+    console.log("Error from authMiddleware:", error.message);
     // Trường hợp lỗi 01: Nếu cái accessToken nó bị hết hạn (expired) thì mình cần trả về mã lỗi GONE - 410 cho phía FE để biết gọi refreshToken
     if (error.message?.includes("jwt expired")) {
       res.status(StatusCodes.GONE).json({ message: "Need to refresh token" });

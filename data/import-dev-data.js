@@ -7,6 +7,9 @@ const Patient = require("./../models/PatientModel");
 const Shift = require("./../models/ShiftModel");
 const Appointment = require("./../models/AppointmentModel");
 const Service = require("./../models/ServicesModel");
+const TwoFA = require("./../models/TwoFAModel");
+const AccountSession = require("./../models/AccountsSessionModel");
+const Order = require("./../models/OrderModel");
 
 dotenv.config({ path: "./config.env" });
 
@@ -34,16 +37,20 @@ const shifts = JSON.parse(fs.readFileSync(`${__dirname}/shifts.json`, "utf-8"));
 const appointments = JSON.parse(
   fs.readFileSync(`${__dirname}/appointments.json`, "utf-8")
 );
+const twoFa = JSON.parse(fs.readFileSync(`${__dirname}/two-fa.json`, "utf-8"));
 
 // IMPORT DATA INTO DB
 const importData = async () => {
   try {
-    await Account.create(accounts, { validateBeforeSave: false });
+    await Account.create();
     await Patient.create(patients);
     await Employee.create(employees);
     await Service.create(services);
     await Shift.create(shifts);
     await Appointment.create(appointments);
+    await TwoFA.create();
+    await AccountSession.create();
+    await Order.create();
     console.log("Data successfully loaded!");
   } catch (err) {
     console.log(err);
@@ -60,6 +67,9 @@ const deleteData = async () => {
     await Appointment.deleteMany();
     await Service.deleteMany();
     await Shift.deleteMany();
+    await TwoFA.deleteMany();
+    await AccountSession.deleteMany();
+    await Order.deleteMany();
     console.log("Data successfully deleted!");
   } catch (err) {
     console.log(err);

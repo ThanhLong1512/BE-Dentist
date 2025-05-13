@@ -1,12 +1,16 @@
 const express = require("express");
 const employeeController = require("../controllers/EmployeeController");
+const authMiddleware = require("../middlewares/authMiddleware");
+const rbacMiddleware = require("../middlewares/rbacMiddleware");
 
 const Router = express.Router();
-
-Router.get("/", employeeController.getEmployees);
-Router.post("/", employeeController.createEmployee);
-Router.get("/:id", employeeController.getEmployeeById);
-Router.put("/:id", employeeController.updateEmployee);
-Router.delete("/:id", employeeController.deleteEmployee);
+Router.use(authMiddleware.isAuthorized, rbacMiddleware.isPermission(["admin"])); // Apply authentication middleware to all routes
+Router.route("/")
+  .get(employeeController.getEmployees)
+  .post(employeeController.createEmployee);
+Router.route("/:id")
+  .get(employeeController.getEmployeeById)
+  .put(employeeController.updateEmployee)
+  .delete(employeeController.deleteEmployee);
 
 module.exports = Router;

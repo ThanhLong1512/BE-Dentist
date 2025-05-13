@@ -14,8 +14,14 @@ const serviceSchema = mongoose.Schema({
     required: [true, "Please provide a valid price"]
   },
   photoService: {
-    type: String,
-    default: "default.jpg"
+    public_id: {
+      type: String,
+      required: true
+    },
+    url: {
+      type: String,
+      required: true
+    }
   },
   description: {
     type: String

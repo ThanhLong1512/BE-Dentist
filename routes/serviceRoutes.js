@@ -1,12 +1,19 @@
 const express = require("express");
 const servicesController = require("../controllers/servicesController");
+const authMiddleware = require("../middlewares/authMiddleware");
+const authController = require("../controllers/authController");
+const rbacMiddleware = require("../middlewares/rbacMiddleware");
 
 const Router = express.Router();
 
-Router.get("/", servicesController.getServices);
-Router.post("/", servicesController.createService);
-Router.get("/:id", servicesController.getServiceById);
-Router.put("/:id", servicesController.updateService);
-Router.delete("/:id", servicesController.deleteService);
+// Define routes for service-related operations
+Router.route("/").get(servicesController.getServices);
+
+Router.use(authMiddleware.isAuthorized, rbacMiddleware.isPermission(["admin"]));
+Router.route("/").post(servicesController.createService);
+Router.route("/:id")
+  .get(servicesController.getServiceById)
+  .put(servicesController.updateService)
+  .delete(servicesController.deleteService);
 
 module.exports = Router;

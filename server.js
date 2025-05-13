@@ -6,7 +6,10 @@ const dotenv = require("dotenv");
 const corsOptions = require("./config/corsOption");
 
 const app = require("./index");
-dotenv.config({ path: "./config.env" }); // Missing app initialization
+dotenv.config({ path: "./config.env" });
+
+console.log(process.env.CLOUDINARY_API_SECRET);
+// Missing app initialization
 
 // // No-cache middleware
 // app.use((req, res, next) => {
@@ -62,7 +65,6 @@ const START_SERVER = async () => {
   }
 };
 
-// Start the server
 (async () => {
   console.log("Starting Server...");
   try {
