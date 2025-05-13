@@ -1,6 +1,5 @@
 // File chứa các thông tin cấu hình thanh toán
 // Lưu ý: Trong môi trường thực tế, nên lưu thông tin nhạy cảm trong biến môi trường (.env)
-//test
 
 const momoConfig = {
   partnerCode: "MOMO",
