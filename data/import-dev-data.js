@@ -9,6 +9,7 @@ const Appointment = require("./../models/AppointmentModel");
 const Service = require("./../models/ServicesModel");
 const TwoFA = require("./../models/TwoFAModel");
 const AccountSession = require("./../models/AccountsSessionModel");
+const Order = require("./../models/OrderModel");
 
 dotenv.config({ path: "./config.env" });
 
@@ -49,6 +50,7 @@ const importData = async () => {
     await Appointment.create(appointments);
     await TwoFA.create();
     await AccountSession.create();
+    await Order.create();
     console.log("Data successfully loaded!");
   } catch (err) {
     console.log(err);
@@ -67,6 +69,7 @@ const deleteData = async () => {
     await Shift.deleteMany();
     await TwoFA.deleteMany();
     await AccountSession.deleteMany();
+    await Order.deleteMany();
     console.log("Data successfully deleted!");
   } catch (err) {
     console.log(err);

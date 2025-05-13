@@ -1,5 +1,6 @@
 const { StatusCodes } = require("http-status-codes");
 const CatchAsync = require("../utils/catchAsync");
+const Order = require("../models/OrderModel");
 const {
   VNPay,
   ignoreLogger,
@@ -19,13 +20,20 @@ const {
 } = require("../config/paymentConfig");
 
 const paymentWithMoMo = CatchAsync(async (req, res) => {
+  const totalPrice = req.body.totalPrice;
+  const service = req.body.service;
   const user = Account.findOne({ where: { id: req.user.id } });
   if (!user) {
-    return res.status(StatusCodes.NOT_FOUND).json({
+    return res.status(StatusCodes.UNAUTHORIZED).json({
       status: "fail",
-      message: "User not found"
+      message: "Please Login to order"
     });
   }
+  const extraDataObj = {
+    account: user.id,
+    service: service
+  };
+
   var partnerCode = momoConfig.partnerCode;
   var accessKey = momoConfig.accessKey;
   var secretkey = momoConfig.secretKey;
@@ -34,9 +42,9 @@ const paymentWithMoMo = CatchAsync(async (req, res) => {
   var orderInfo = momoConfig.orderInfo;
   var redirectUrl = momoConfig.redirectUrl;
   var ipnUrl = momoConfig.ipnUrl;
-  var amount = "50000";
+  var amount = totalPrice;
   var requestType = momoConfig.requestType;
-  var extraData = momoConfig.extraData;
+  var extraData = Buffer.from(JSON.stringify(extraDataObj)).toString("base64");
 
   var rawSignature =
     "accessKey=" +
@@ -213,6 +221,25 @@ const callbackZaloPay = CatchAsync(async (req, res) => {
   res.status(200).json(result);
 });
 const callbackMoMo = CatchAsync(async (req, res) => {
+  console.log("callbackMoMo", req.body);
+  let extraDataObj = {};
+  try {
+    if (req.body.extraData) {
+      const decodedExtraData = Buffer.from(
+        req.body.extraData,
+        "base64"
+      ).toString();
+      extraDataObj = JSON.parse(decodedExtraData);
+    }
+  } catch (error) {
+    console.error("Error parsing extraData:", error);
+  }
+  console.log("extraDataObj", extraDataObj);
+  Order.create({
+    status: req.body.message,
+    paymentMethod: req.body.paymentType + req.body.partnerCode,
+    totalPrice: req.body.amount
+  });
   return res.status(StatusCodes.OK).json({
     status: "success",
     data: {
