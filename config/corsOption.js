@@ -10,3 +10,4 @@ module.exports = {
   allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   exposedHeaders: ["Content-Range", "X-Content-Range"]
 };
+
