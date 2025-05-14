@@ -5,9 +5,9 @@ const momoConfig = {
   partnerCode: "MOMO",
   accessKey: "F8BBA842ECF85",
   secretKey: "K951B6PE1waDMi640xX08PD3vg6EkVlz",
-  redirectUrl: "https://momo.vn/return",
+  redirectUrl: "http://localhost:5173/home",
   ipnUrl:
-    "https://74da-14-169-70-31.ngrok-free.app/api/v1/payments/callbackwithMoMo",
+    "https://9353-14-169-70-31.ngrok-free.app/api/v1/payments/callbackwithMoMo",
   requestType: "captureWallet",
   orderInfo: "pay with MoMo",
   extraData: ""

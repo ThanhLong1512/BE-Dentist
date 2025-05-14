@@ -105,16 +105,21 @@ const paymentWithMoMo = CatchAsync(async (req, res) => {
 });
 
 const paymentWithZaloPay = CatchAsync(async (req, res) => {
-  const user = Account.findOne({ where: { id: req.user.id } });
+  const totalPrice = req.body.totalPrice;
+  const user = await Account.findById(req.user.id);
   if (!user) {
-    return res.status(StatusCodes.NOT_FOUND).json({
+    return res.status(StatusCodes.UNAUTHORIZED).json({
       status: "fail",
-      message: "User not found"
+      message: "Please Login to order"
     });
   }
   const config = zaloPayConfig;
   const embed_data = {
-    redirectUrl: "http://localhost:5173/home"
+    redirectUrl: "http://localhost:5173/home",
+    customData: {
+      account: user.id,
+      service: req.body.service
+    }
   };
   const items = [{}];
   const transID = Math.floor(Math.random() * 1000000);
@@ -125,11 +130,11 @@ const paymentWithZaloPay = CatchAsync(async (req, res) => {
     app_time: Date.now(),
     item: JSON.stringify(items),
     embed_data: JSON.stringify(embed_data),
-    amount: 50000,
+    amount: totalPrice,
     description: `Lazada - Payment for the order #${transID}`,
     bank_code: "",
     callback_url:
-      "https://1643-14-186-89-251.ngrok-free.app/api/v1/payments/callbackwithZaloPay"
+      "https://9353-14-169-70-31.ngrok-free.app/api/v1/payments/callbackwithZaloPay"
   };
   const data =
     config.app_id +
@@ -157,6 +162,8 @@ const paymentWithZaloPay = CatchAsync(async (req, res) => {
 });
 
 const paymentWithVnPay = CatchAsync(async (req, res) => {
+  const totalPrice = req.body.totalPrice;
+  const service = req.body.service;
   const user = Account.findOne({ where: { id: req.user.id } });
   if (!user) {
     return res.status(StatusCodes.NOT_FOUND).json({
@@ -177,7 +184,7 @@ const paymentWithVnPay = CatchAsync(async (req, res) => {
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   const paymentUrl = vnpay.buildPaymentUrl({
-    vnp_Amount: 10000,
+    vnp_Amount: totalPrice,
     vnp_IpAddr: "13.160.92.202",
     vnp_TxnRef: "123456",
     vnp_OrderInfo: "Thanh toan don hang 123456",
@@ -203,43 +210,55 @@ const callbackZaloPay = CatchAsync(async (req, res) => {
 
   let mac = CryptoJS.HmacSHA256(dataStr, zaloPayConfig.key2).toString();
 
-  // kiểm tra callback hợp lệ (đến từ ZaloPay server)
   if (reqMac !== mac) {
-    // callback không hợp lệ
     result.return_code = -1;
     result.return_message = "mac not equal";
-  } else {
-    // thanh toán thành công
-    // merchant cập nhật trạng thái cho đơn hàng
-    let dataJson = JSON.parse(dataStr, config.key2);
-
-    result.return_code = 1;
-    result.return_message = "success";
+    return res.status(400).json(result);
   }
 
-  // thông báo kết quả cho ZaloPay server
-  res.status(200).json(result);
+  try {
+    let dataJson = JSON.parse(dataStr);
+    let embedData = JSON.parse(dataJson.embed_data);
+    const customData = embedData.customData;
+    const account = customData.account;
+    const services = customData.service;
+
+    await Order.create({
+      account: account,
+      service: services,
+      status: "Successful.",
+      totalPrice: dataJson.amount,
+      paymentMethod: "ZaloPay"
+    });
+
+    return res.status(200).json({
+      message: "Successful",
+      account: account,
+      services: services
+    });
+  } catch (error) {
+    return res.status(500).json({
+      return_code: -1,
+      return_message: "Error processing callback"
+    });
+  }
 });
 const callbackMoMo = CatchAsync(async (req, res) => {
   console.log("callbackMoMo", req.body);
   let extraDataObj = {};
-  try {
-    if (req.body.extraData) {
-      const decodedExtraData = Buffer.from(
-        req.body.extraData,
-        "base64"
-      ).toString();
-      extraDataObj = JSON.parse(decodedExtraData);
-    }
-  } catch (error) {
-    console.error("Error parsing extraData:", error);
+  if (req.body.extraData) {
+    const decodedExtraData = Buffer.from(
+      req.body.extraData,
+      "base64"
+    ).toString();
+    extraDataObj = JSON.parse(decodedExtraData);
   }
   console.log("extraDataObj", extraDataObj);
   await Order.create({
     account: extraDataObj.account,
     service: extraDataObj.service,
     status: req.body.message,
-    paymentMethod: req.body.paymentType + req.body.partnerCode,
+    paymentMethod: req.body.payType + "-" + req.body.partnerCode,
     totalPrice: req.body.amount
   });
   return res.status(StatusCodes.OK).json({

@@ -41,6 +41,10 @@ const accountSchema = new mongoose.Schema(
       },
       select: false
     },
+    photo: {
+      type: String,
+      default: "default.jpg"
+    },
     isLocked: {
       type: Boolean,
       default: false

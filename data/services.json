@@ -8,105 +8,125 @@
       "public_id": "5_nusbyb",
       "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/5_nusbyb.jpg"
     },
-    "description": "Complete blood count, liver function, kidney function and other essential tests"
+    "summary": "Comprehensive laboratory testing for health diagnostics.",
+    "priceDiscount": 380000,
+    "description": "Complete blood count, liver function, kidney function, and other essential tests to assess your overall health and detect potential issues early."
   },
   {
     "_id": "5f8d1a2ba2dd5d6f7a8b9c10",
     "nameService": "Dental Checkup",
     "Unit": "Session",
     "priceService": 350000,
+    "priceDiscount": 330000,
     "photoService": {
       "public_id": "8_bz3c3y",
       "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/8_bz3c3y.jpg"
     },
-    "description": "Comprehensive dental examination, cleaning and minor treatments"
+    "summary": "Routine dental examination and cleaning.",
+    "description": "Comprehensive dental examination, professional cleaning, and minor treatments to maintain oral health and prevent dental issues."
   },
   {
     "_id": "5f8d1a2ba2dd5d6f7a8b9c11",
     "nameService": "Eye Examination",
     "Unit": "Session",
     "priceService": 250000,
+    "priceDiscount": 238000,
     "photoService": {
       "public_id": "6_wxxpua",
       "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/6_wxxpua.jpg"
     },
-    "description": "Vision testing, eye pressure measurements and general eye health assessment"
+    "summary": "Comprehensive vision and eye health assessment.",
+    "description": "Vision testing, eye pressure measurements, and general eye health assessment to ensure optimal vision and detect potential eye conditions."
   },
   {
     "_id": "5f8d1a2ba2dd5d6f7a8b9c12",
     "nameService": "Physiotherapy",
     "Unit": "Hour",
     "priceService": 400000,
+    "priceDiscount": 380000,
     "photoService": {
       "public_id": "2_lskhri",
       "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/2_lskhri.jpg"
     },
-    "description": "Professional physical therapy for injury recovery and pain management"
+    "summary": "Professional physical therapy for recovery.",
+    "description": "Professional physical therapy sessions designed to aid injury recovery, improve mobility, and manage chronic pain effectively."
   },
   {
     "_id": "5f8d1a2ba2dd5d6f7a8b9c13",
     "nameService": "Nutrition Consultation",
     "Unit": "Session",
     "priceService": 280000,
+    "priceDiscount": 250000,
     "photoService": {
       "public_id": "7_izvzv1",
       "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/7_izvzv1.jpg"
     },
-    "description": "Personalized dietary advice and nutrition planning for optimal health"
+    "summary": "Personalized dietary advice for better health.",
+    "description": "Receive personalized dietary advice and nutrition planning tailored to your health goals and lifestyle for optimal well-being."
   },
   {
     "_id": "5f8d1a2ba2dd5d6f7a8b9c14",
     "nameService": "Vaccination",
     "Unit": "Dose",
     "priceService": 200000,
+    "priceDiscount": 170000,
     "photoService": {
       "public_id": "3_svrwry",
       "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/3_svrwry.jpg"
     },
-    "description": "Standard vaccinations for adults and children with medical consultation"
+    "summary": "Standard vaccinations for all ages.",
+    "description": "Standard vaccinations for adults and children, including medical consultation to ensure safety and effectiveness."
   },
   {
     "_id": "5f8d1a2ba2dd5d6f7a8b9c15",
     "nameService": "Mental Health Counseling",
     "Unit": "Session",
     "priceService": 550000,
+    "priceDiscount": 400000,
     "photoService": {
       "public_id": "10_ge9daz",
       "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/10_ge9daz.jpg"
     },
-    "description": "Professional psychological assessment and therapy with licensed counselors"
+    "summary": "Professional psychological support.",
+    "description": "Professional psychological assessment and therapy sessions with licensed counselors to address mental health concerns and improve well-being."
   },
   {
     "_id": "5f8d1a2ba2dd5d6f7a8b9c16",
     "nameService": "ENT Examination",
     "Unit": "Session",
     "priceService": 320000,
+    "priceDiscount": 300000,
     "photoService": {
       "public_id": "9_tlr1sz",
       "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/9_tlr1sz.jpg"
     },
-    "description": "Comprehensive examination of ears, nose, and throat by specialists"
+    "summary": "Specialized examination for ears, nose, and throat.",
+    "description": "Comprehensive examination of ears, nose, and throat by specialists to diagnose and treat ENT-related conditions effectively."
   },
   {
     "_id": "5f8d1a2ba2dd5d6f7a8b9c17",
     "nameService": "Ultrasound Scan",
     "Unit": "Procedure",
     "priceService": 600000,
+    "priceDiscount": 530000,
     "photoService": {
       "public_id": "4_acpyvj",
       "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/4_acpyvj.jpg"
     },
-    "description": "Non-invasive imaging of internal organs for diagnostic purposes"
+    "summary": "Non-invasive imaging for diagnostics.",
+    "description": "Non-invasive imaging of internal organs to aid in diagnostic purposes and provide detailed insights into your health."
   },
   {
     "_id": "5f8d1a2ba2dd5d6f7a8b9c18",
     "nameService": "Cardiology Assessment",
     "Unit": "Session",
     "priceService": 750000,
+    "priceDiscount": 72000,
     "photoService": {
       "public_id": "10_ge9daz",
       "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/10_ge9daz.jpg"
     },
-    "description": "Heart health evaluation including ECG and stress test where applicable"
+    "summary": "Comprehensive heart health evaluation.",
+    "description": "Heart health evaluation including ECG, stress tests, and consultations with cardiology specialists to ensure optimal cardiovascular health."
   }
 ]

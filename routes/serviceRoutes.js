@@ -8,11 +8,11 @@ const Router = express.Router();
 
 // Define routes for service-related operations
 Router.route("/").get(servicesController.getServices);
+Router.route("/:id").get(servicesController.getServiceById);
 
 Router.use(authMiddleware.isAuthorized, rbacMiddleware.isPermission(["admin"]));
 Router.route("/").post(servicesController.createService);
 Router.route("/:id")
-  .get(servicesController.getServiceById)
   .put(servicesController.updateService)
   .delete(servicesController.deleteService);
 
