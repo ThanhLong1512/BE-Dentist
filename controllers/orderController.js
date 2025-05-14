@@ -6,7 +6,7 @@ const Service = require("../models/ServicesModel");
 
 const getOrders = CatchAsync(async (req, res) => {
   const orders = await Order.find()
-    .populate("account")
+    .populate({ path: "account", select: "name email" })
     .populate("service");
   return res.status(StatusCodes.ACCEPTED).json({
     status: "success",

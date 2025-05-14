@@ -7,15 +7,13 @@ const corsOptions = require("./config/corsOption");
 
 const app = require("./index");
 dotenv.config({ path: "./config.env" });
-
-console.log(process.env.CLOUDINARY_API_SECRET);
 // Missing app initialization
 
 // // No-cache middleware
-// app.use((req, res, next) => {
-//   res.set("Cache-Control", "no-store");
-//   next();
-// });
+app.use((req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
 
 // Route handlers (these were imported but not used)
 
