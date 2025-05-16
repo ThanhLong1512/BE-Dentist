@@ -20,6 +20,7 @@ const appointmentRoutes = require("./routes/appointmentRoutes");
 const shiftRoutes = require("./routes/shiftRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
 const corsOption = require("./config/corsOption");
 
 const app = express();
@@ -93,6 +94,7 @@ app.use("/api/v1/appointments", appointmentRoutes);
 app.use("/api/v1/shifts", shiftRoutes);
 app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/orders", orderRoutes);
+app.use("/api/v1/reviews", reviewRoutes);
 // // Import routes
 
 // Handle 404 errors
