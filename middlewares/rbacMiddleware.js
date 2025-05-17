@@ -3,7 +3,6 @@ const { StatusCodes } = require("http-status-codes");
 const isPermission = allowedRoles => async (req, res, next) => {
   try {
     const userRole = req.user.role;
-    console.log(allowedRoles);
     if (!userRole || !allowedRoles.includes(userRole)) {
       res
         .status(StatusCodes.FORBIDDEN)

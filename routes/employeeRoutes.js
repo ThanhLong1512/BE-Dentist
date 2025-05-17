@@ -3,14 +3,29 @@ const employeeController = require("../controllers/EmployeeController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const rbacMiddleware = require("../middlewares/rbacMiddleware");
 
-const Router = express.Router();
-Router.use(authMiddleware.isAuthorized, rbacMiddleware.isPermission(["admin"])); // Apply authentication middleware to all routes
-Router.route("/")
-  .get(employeeController.getEmployees)
-  .post(employeeController.createEmployee);
-Router.route("/:id")
-  .get(employeeController.getEmployeeById)
-  .put(employeeController.updateEmployee)
-  .delete(employeeController.deleteEmployee);
+const router = express.Router({ mergeParams: true });
 
-module.exports = Router;
+router.use(authMiddleware.isAuthorized);
+
+router
+  .route("/")
+  .get(employeeController.getAllEmployees)
+  .post(
+    rbacMiddleware.isPermission(["admin"]),
+    employeeController.setServiceID,
+    employeeController.createEmployee
+  );
+
+router
+  .route("/:id")
+  .get(employeeController.getEmployee)
+  .patch(
+    rbacMiddleware.isPermission(["admin"]),
+    employeeController.updateEmployee
+  )
+  .delete(
+    rbacMiddleware.isPermission(["admin"]),
+    employeeController.deleteEmployee
+  );
+
+module.exports = router;

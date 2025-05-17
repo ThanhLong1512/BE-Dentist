@@ -1,11 +1,19 @@
 const express = require("express");
 const accountController = require("./../controllers/accountController");
 const authMiddleware = require("./../middlewares/authMiddleware");
+const rbacMiddleware = require("../middlewares/rbacMiddleware");
 
-const Router = express.Router();
-Router.use(authMiddleware.isAuthorized);
-Router.get("/", accountController.getAccounts);
-Router.put("/:id", accountController.updateAccount);
-// Router.get("/accounts", accountController.getAccounts);
+const router = express.Router({ mergeParams: true });
 
-module.exports = Router;
+router.use(authMiddleware.isAuthorized);
+
+router.route("/").get(accountController.getAllAccounts);
+
+router
+  .route("/:id")
+  .get(accountController.getAccount)
+  .patch(
+    rbacMiddleware.isPermission(["user", "admin"]),
+    accountController.updateAccount
+  );
+module.exports = router;

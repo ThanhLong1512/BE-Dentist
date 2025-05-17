@@ -23,7 +23,6 @@ exports.createService = async (req, res) => {
       crop: "scale"
     });
 
-    // Create new service
     const service = await Service.create({
       nameService,
       Unit,
@@ -49,7 +48,7 @@ exports.createService = async (req, res) => {
 
 exports.getServiceById = async (req, res) => {
   try {
-    const service = await Service.findById(req.params.id);
+    const service = await Service.findById(req.params.id).populate("reviews");
     if (!service) return res.status(404).json({ message: "Service not found" });
     res.json(service);
   } catch (err) {
@@ -114,11 +113,11 @@ exports.deleteService = async (req, res) => {
       });
     }
 
-    // Delete image from cloudinary
+    // Xóa ảnh từ Cloudinary
     await cloudinary.uploader.destroy(service.photoService.public_id);
 
-    // Delete service from database
-    await service.remove();
+    // Sử dụng deleteOne() thay vì remove()
+    await Service.deleteOne({ _id: req.params.id });
 
     res.status(200).json({
       success: true,

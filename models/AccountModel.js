@@ -43,7 +43,8 @@ const accountSchema = new mongoose.Schema(
     },
     photo: {
       type: String,
-      default: "default.jpg"
+      default:
+        "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1747498070/user_tqd94a.jpg"
     },
     isLocked: {
       type: Boolean,
