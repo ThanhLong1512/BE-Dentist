@@ -1,4 +1,3 @@
-// review / rating / createdAt / ref to tour / ref to user
 const mongoose = require("mongoose");
 const Service = require("./ServicesModel");
 
@@ -34,69 +33,74 @@ const reviewSchema = new mongoose.Schema(
   }
 );
 
-// reviewSchema.index({ service: 1, account: 1 }, { unique: true });
+reviewSchema.index({ account: 1, service: 1 }, { unique: true });
 
-// reviewSchema.pre(/^find/, function(next) {
-//   // this.populate({
-//   //   path: 'tour',
-//   //   select: 'name'
-//   // }).populate({
-//   //   path: 'user',
-//   //   select: 'name photo'
-//   // });
+reviewSchema.pre(/^find/, function(next) {
+  this.populate({
+    path: "account",
+    select: "name email photo"
+  });
+  next();
+});
 
-//   this.populate({
-//     path: 'user',
-//     select: 'name photo'
-//   });
-//   next();
-// });
+reviewSchema.statics.calcAverageRatings = async function(serviceId) {
+  const stats = await this.aggregate([
+    {
+      $match: { service: serviceId }
+    },
+    {
+      $group: {
+        _id: "$service",
+        nRating: { $sum: 1 },
+        avgRating: { $avg: "$rating" }
+      }
+    }
+  ]);
 
-// reviewSchema.statics.calcAverageRatings = async function(tourId) {
-//   const stats = await this.aggregate([
-//     {
-//       $match: { tour: tourId }
-//     },
-//     {
-//       $group: {
-//         _id: '$tour',
-//         nRating: { $sum: 1 },
-//         avgRating: { $avg: '$rating' }
-//       }
-//     }
-//   ]);
-//   // console.log(stats);
+  if (stats.length > 0) {
+    await Service.findByIdAndUpdate(serviceId, {
+      ratingsQuantity: stats[0].nRating,
+      ratingsAverage: stats[0].avgRating
+    });
+  } else {
+    await Service.findByIdAndUpdate(serviceId, {
+      ratingsQuantity: 0,
+      ratingsAverage: 4.5
+    });
+  }
+};
 
-//   if (stats.length > 0) {
-//     await Tour.findByIdAndUpdate(tourId, {
-//       ratingsQuantity: stats[0].nRating,
-//       ratingsAverage: stats[0].avgRating
-//     });
-//   } else {
-//     await Tour.findByIdAndUpdate(tourId, {
-//       ratingsQuantity: 0,
-//       ratingsAverage: 4.5
-//     });
-//   }
-// };
+reviewSchema.post("save", function() {
+  this.constructor.calcAverageRatings(this.service);
+});
 
-// reviewSchema.post('save', function() {
-//   // this points to current review
-//   this.constructor.calcAverageRatings(this.tour);
-// });
+reviewSchema.pre("findOneAndDelete", async function(next) {
+  const doc = await this.model.findOne(this.getFilter());
+  if (doc) {
+    this._serviceId = doc.service;
+  }
+  next();
+});
 
-// // findByIdAndUpdate
-// // findByIdAndDelete
-// reviewSchema.pre(/^findOneAnd/, async function(next) {
-//   this.r = await this.findOne();
-//   // console.log(this.r);
-//   next();
-// });
+reviewSchema.post("findOneAndDelete", async function() {
+  if (this._serviceId) {
+    await this.model.calcAverageRatings(this._serviceId);
+  }
+});
 
-// reviewSchema.post(/^findOneAnd/, async function() {
-//   // await this.findOne(); does NOT work here, query has already executed
-//   await this.r.constructor.calcAverageRatings(this.r.tour);
-// });
+reviewSchema.pre("findOneAndUpdate", async function(next) {
+  const doc = await this.model.findOne(this.getFilter());
+  if (doc) {
+    this._serviceId = doc.service;
+  }
+  next();
+});
+
+reviewSchema.post("findOneAndUpdate", async function() {
+  if (this._serviceId) {
+    await this.model.calcAverageRatings(this._serviceId);
+  }
+});
 
 const Review = mongoose.model("Review", reviewSchema);
 

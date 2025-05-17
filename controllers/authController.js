@@ -26,7 +26,7 @@ const login = CatchAsync(async (req, res, next) => {
     });
   }
   if (user.isLocked) {
-    return res.status(StatusCodes.UNAUTHORIZED).json({
+    return res.status(StatusCodes.NOT_FOUND).json({
       message:
         "Your account has been locked. Please contact admin for more information."
     });

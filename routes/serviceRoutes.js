@@ -10,10 +10,13 @@ const Router = express.Router();
 Router.route("/").get(servicesController.getServices);
 Router.route("/:id").get(servicesController.getServiceById);
 
-Router.use(authMiddleware.isAuthorized, rbacMiddleware.isPermission(["admin"]));
+Router.use(
+  authMiddleware.isAuthorized,
+  rbacMiddleware.isPermission(["admin", "user"])
+);
 Router.route("/").post(servicesController.createService);
 Router.route("/:id")
-  .put(servicesController.updateService)
+  .patch(servicesController.updateService)
   .delete(servicesController.deleteService);
 
 module.exports = Router;

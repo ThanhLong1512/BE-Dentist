@@ -1,53 +1,14 @@
-const Patient = require("../models/PatientModel");
-const Account = require("../models/AccountModel");
+const Patient = require("./../models/PatientModel");
+const factory = require("./handlerFactory");
+// const catchAsync = require('./../utils/catchAsync');
 
-exports.getPatients = async (req, res) => {
-  try {
-    const patients = await Patient.find().populate("account");
-    res.json(patients);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+exports.setAccountId = (req, res, next) => {
+  if (!req.body.account) req.body.account = req.user.id;
+  next();
 };
 
-exports.createPatient = async (req, res) => {
-  try {
-    const patient = new Patient(req.body);
-    await patient.save();
-    res.status(201).json(patient);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-};
-
-exports.getPatientById = async (req, res) => {
-  try {
-    const patient = await Patient.findById(req.params.id).populate("account");
-    if (!patient) return res.status(404).json({ message: "Patient not found" });
-    res.json(patient);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-exports.updatePatient = async (req, res) => {
-  try {
-    const patient = await Patient.findByIdAndUpdate(req.params.id, req.body, {
-      new: true
-    });
-    if (!patient) return res.status(404).json({ message: "Patient not found" });
-    res.json(patient);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-};
-
-exports.deletePatient = async (req, res) => {
-  try {
-    const patient = await Patient.findByIdAndDelete(req.params.id);
-    if (!patient) return res.status(404).json({ message: "Patient not found" });
-    res.json({ message: "Patient deleted" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+exports.getAllPatients = factory.getAll(Patient);
+exports.getPatient = factory.getOne(Patient);
+exports.createPatient = factory.createOne(Patient);
+exports.updatePatient = factory.updateOne(Patient);
+exports.deletePatient = factory.deleteOne(Patient);
