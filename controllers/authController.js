@@ -42,6 +42,7 @@ const login = CatchAsync(async (req, res, next) => {
     id: user._id,
     email: user.email,
     role: user.role,
+    image: user.photo,
     require_2FA: user.require_2FA,
     is_2fa_verified: newAccountSession.is_2fa_verified,
     last_login: newAccountSession.last_login

@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { trim } = require("validator");
+const { populateReviews } = require("../middlewares/serviceMiddleware");
 
 const serviceSchema = mongoose.Schema(
   {
@@ -70,6 +71,8 @@ serviceSchema.virtual("reviews", {
   foreignField: "service",
   localField: "_id"
 });
+
+serviceSchema.pre(/^find/, populateReviews);
 
 const Service = mongoose.model("Service", serviceSchema);
 module.exports = Service;

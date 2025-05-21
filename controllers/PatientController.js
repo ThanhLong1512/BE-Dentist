@@ -1,6 +1,5 @@
 const Patient = require("./../models/PatientModel");
 const factory = require("./handlerFactory");
-// const catchAsync = require('./../utils/catchAsync');
 
 exports.setAccountId = (req, res, next) => {
   if (!req.body.account) req.body.account = req.user.id;

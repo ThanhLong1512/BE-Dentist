@@ -1,17 +1,9 @@
 const Service = require("../models/ServicesModel");
 const cloudinary = require("../providers/CloudinaryProvider");
+const factory = require("./handlerFactory");
 
-exports.getServices = async (req, res) => {
-  try {
-    const Services = await Service.find().populate("reviews");
-    if (!Services || Services.length === 0)
-      return res.status(404).json({ message: "No Services found" });
-
-    res.json(Services);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+exports.getAllServices = factory.getAll(Service);
+exports.getService = factory.getOne(Service);
 
 exports.createService = async (req, res) => {
   try {
@@ -46,16 +38,6 @@ exports.createService = async (req, res) => {
   }
 };
 
-exports.getServiceById = async (req, res) => {
-  try {
-    const service = await Service.findById(req.params.id).populate("reviews");
-    if (!service) return res.status(404).json({ message: "Service not found" });
-    res.json(service);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
 exports.updateService = async (req, res) => {
   try {
     let service = await Service.findById(req.params.id);
@@ -67,12 +49,8 @@ exports.updateService = async (req, res) => {
       });
     }
 
-    // Update image if new image is uploaded
     if (req.file) {
-      // Delete old image
       await cloudinary.uploader.destroy(service.photoService.public_id);
-
-      // Upload new image
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "dental-services",
         width: 600,
@@ -113,10 +91,8 @@ exports.deleteService = async (req, res) => {
       });
     }
 
-    // Xóa ảnh từ Cloudinary
     await cloudinary.uploader.destroy(service.photoService.public_id);
 
-    // Sử dụng deleteOne() thay vì remove()
     await Service.deleteOne({ _id: req.params.id });
 
     res.status(200).json({

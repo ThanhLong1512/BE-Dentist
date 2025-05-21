@@ -33,7 +33,6 @@ const accountSchema = new mongoose.Schema(
       type: String,
       required: [true, "Please confirm your password"],
       validate: {
-        // This only works on CREATE and SAVE!!!
         validator: function(el) {
           return el === this.password;
         },
@@ -45,6 +44,11 @@ const accountSchema = new mongoose.Schema(
       type: String,
       default:
         "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1747498070/user_tqd94a.jpg"
+    },
+    photoPublicId: {
+      type: String,
+      select: false,
+      default: "user_tqd94a"
     },
     isLocked: {
       type: Boolean,

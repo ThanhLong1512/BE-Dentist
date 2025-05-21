@@ -1,21 +1,17 @@
 const { StatusCodes } = require("http-status-codes");
 const CatchAsync = require("../utils/catchAsync");
 const Order = require("../models/OrderModel");
-const Account = require("../models/AccountModel");
-const Service = require("../models/ServicesModel");
+const factory = require("./handlerFactory");
 
-const getOrders = CatchAsync(async (req, res) => {
-  const orders = await Order.find()
-    .populate({ path: "account", select: "name email" })
-    .populate("service");
-  return res.status(StatusCodes.ACCEPTED).json({
-    status: "success",
-    data: orders
-  });
-});
-const getOrder = CatchAsync(async (req, res) => {
+exports.getAllOrders = factory.getAll(Order);
+exports.getOrderByID = factory.getOne(Order);
+exports.createOrder = factory.createOne(Order);
+exports.updateOrder = factory.updateOne(Order);
+exports.deleteOrder = factory.deleteOne(Order);
+
+exports.getOrderByUser = CatchAsync(async (req, res) => {
   const userID = req.user.id;
-  const order = Order.findById(req.user.id);
+  const order = await Order.findById(req.user.id);
   if (!userID) {
     return res.status(StatusCodes.UNAUTHORIZED).json({
       message: "Please Login to check your order"
@@ -33,5 +29,3 @@ const getOrder = CatchAsync(async (req, res) => {
     }
   });
 });
-const OrderController = { getOrders, getOrder };
-module.exports = OrderController;

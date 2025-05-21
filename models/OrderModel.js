@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { populateAccountAndService } = require("../middlewares/orderMiddleware");
 const orderSchema = new mongoose.Schema(
   {
     account: {
@@ -40,5 +41,7 @@ const orderSchema = new mongoose.Schema(
     }
   }
 );
+
+orderSchema.pre(/^find/, populateAccountAndService);
 const Order = mongoose.model("Order", orderSchema);
 module.exports = Order;

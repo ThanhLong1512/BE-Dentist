@@ -6,9 +6,8 @@ const rbacMiddleware = require("../middlewares/rbacMiddleware");
 
 const Router = express.Router();
 
-// Define routes for service-related operations
-Router.route("/").get(servicesController.getServices);
-Router.route("/:id").get(servicesController.getServiceById);
+Router.route("/").get(servicesController.getAllServices);
+Router.route("/:id").get(servicesController.getService);
 
 Router.use(
   authMiddleware.isAuthorized,

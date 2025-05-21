@@ -1,38 +1,32 @@
-const getShiftsByToday = (req, res, next) => {
-  try {
-    const today = new Date();
-    const days = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday"
-    ];
-    const currentDayOfWeek = days[today.getDay()];
+exports.getShiftsByToday = function(req, res, next) {
+  const today = new Date();
+  const days = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday"
+  ];
+  const currentDayOfWeek = days[today.getDay()];
+  req.dayOfWeekFilter = currentDayOfWeek;
 
-    console.log("Current day of week:", currentDayOfWeek);
-
-    // Add day of week filter to request
-    req.dayOfWeekFilter = currentDayOfWeek;
-
-    next();
-  } catch (error) {
-    res
-      .status(500)
-      .json({
-        message: "Error filtering shifts by day of week",
-        error: error.message
-      });
-  }
+  next();
 };
 
-function filterBookedShift(next) {
+exports.filterBookedShift = function(next) {
   this.find({ isBooked: { $ne: true } });
   next();
-}
-module.exports = {
-  getShiftsByToday,
-  filterBookedShift
+};
+
+exports.populateEmployeeAndService = function(next) {
+  this.populate({
+    path: "employee",
+    populate: {
+      path: "service",
+      model: "Service"
+    }
+  });
+  next();
 };

@@ -244,7 +244,6 @@ const callbackZaloPay = CatchAsync(async (req, res) => {
   }
 });
 const callbackMoMo = CatchAsync(async (req, res) => {
-  console.log("callbackMoMo", req.body);
   let extraDataObj = {};
   if (req.body.extraData) {
     const decodedExtraData = Buffer.from(

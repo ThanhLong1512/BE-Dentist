@@ -40,11 +40,8 @@ const createAppointment = catchAsync(async (req, res, next) => {
       shift: shift,
       Date: Date
     });
-
-    // Update shift's isBooked status
     await Shift.findByIdAndUpdate(shift, { isBooked: true });
 
-    // Get populated appointment data
     const populatedAppointment = await Appointment.findById(appointment._id)
       .populate("patient", "name email phone")
       .populate({
@@ -62,7 +59,6 @@ const createAppointment = catchAsync(async (req, res, next) => {
       message: "Book appointment successfully"
     });
   } catch (error) {
-    // If there's an error, ensure we handle it properly
     return next(new AppError(error.message, 400));
   }
 });
