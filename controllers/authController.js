@@ -135,6 +135,7 @@ const register = CatchAsync(async (req, res) => {
     id: newUser._id,
     email: newUser.email,
     role: newUser.role,
+    image: newUser.photo,
     require_2FA: newUser.require_2FA,
     is_2fa_verified: newAccountSession.is_2fa_verified,
     last_login: newAccountSession.last_login
