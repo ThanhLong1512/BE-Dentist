@@ -5,7 +5,10 @@ const rbacMiddleware = require("../middlewares/rbacMiddleware");
 
 const Router = express.Router({ mergeParams: true });
 
-Router.use(authMiddleware.isAuthorized, rbacMiddleware.isPermission(["admin"]));
+Router.use(
+  authMiddleware.isAuthorized,
+  rbacMiddleware.isPermission(["admin", "user"])
+);
 
 Router.route("/")
   .get(PatientController.getAllPatients)

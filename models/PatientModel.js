@@ -48,5 +48,11 @@ const patientSchema = mongoose.Schema({
     }
   }
 });
+patientSchema.pre(/^find/, function(next) {
+  this.populate({
+    path: "account"
+  });
+  next();
+});
 const Patient = mongoose.model("Patient", patientSchema);
 module.exports = Patient;

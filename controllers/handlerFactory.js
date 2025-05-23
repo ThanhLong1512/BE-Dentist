@@ -65,22 +65,52 @@ exports.getOne = (Model, popOptions) =>
     });
   });
 
-exports.getAll = Model =>
-  catchAsync(async (req, res, next) => {
-    let filter = {};
-    if (req.params.serviceID) filter = { service: req.params.serviceID };
+exports.getAll = Model => async (req, res, next) => {
+  try {
+    const countQuery = Model.find();
 
-    const features = new APIFeatures(Model.find(filter), req.query)
+    const queryObj = { ...req.query };
+    const excludedFields = ["page", "sort", "limit", "fields"];
+    excludedFields.forEach(el => delete queryObj[el]);
+
+    let queryStr = JSON.stringify(queryObj);
+    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `$${match}`);
+
+    const totalDocuments = await countQuery
+      .find(JSON.parse(queryStr))
+      .countDocuments();
+
+    const features = new APIFeatures(Model.find(), req.query)
       .filter()
       .sort()
       .limitFields()
       .paginate();
+
     const doc = await features.query;
+    const { page, limit } = features.getPaginationInfo();
+    const totalPages = Math.ceil(totalDocuments / limit);
+
     res.status(200).json({
       status: "success",
       results: doc.length,
+      pagination: {
+        page: page,
+        limit: limit,
+        totalDocuments: totalDocuments,
+        totalPages: totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+        nextPage: page < totalPages ? page + 1 : null,
+        prevPage: page > 1 ? page - 1 : null
+      },
       data: {
         data: doc
       }
     });
-  });
+  } catch (error) {
+    res.status(400).json({
+      status: "fail",
+      message: error.message
+    });
+  }
+};
