@@ -10,7 +10,9 @@ const hpp = require("hpp");
 const compression = require("compression");
 
 const AppError = require("./utils/appError");
+
 const globalErrorHandler = require("./controllers/errorController");
+
 const authRouter = require("./routes/authRoutes");
 const employeeRoutes = require("./routes/employeeRoutes");
 const patientRoutes = require("./routes/patientRoutes");
@@ -21,6 +23,9 @@ const shiftRoutes = require("./routes/shiftRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+const conservationRoutes = require("./routes/conservationRoutes");
+const messageRoutes = require("./routes/messageRoutes");
+
 const corsOption = require("./config/corsOption");
 
 const app = express();
@@ -95,6 +100,9 @@ app.use("/api/v1/shifts", shiftRoutes);
 app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/reviews", reviewRoutes);
+app.use("/api/v1/conservations", conservationRoutes);
+app.use("/api/v1/messages", messageRoutes);
+
 // // Import routes
 
 // Handle 404 errors

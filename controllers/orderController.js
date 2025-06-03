@@ -11,21 +11,30 @@ exports.deleteOrder = factory.deleteOne(Order);
 
 exports.getOrderByUser = CatchAsync(async (req, res) => {
   const userID = req.user.id;
-  const order = await Order.findById(req.user.id);
+
   if (!userID) {
     return res.status(StatusCodes.UNAUTHORIZED).json({
       message: "Please Login to check your order"
     });
   }
-  if (!order) {
-    return res
-      .status(StatusCodes.NOT_FOUND)
-      .json({ message: "No one order for this account" });
+
+  const orders = await Order.find({ account: userID }).populate("service");
+
+  if (!orders || orders.length === 0) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      message: "No orders found for this account"
+    });
   }
+
+  const codOrders = orders.filter(order => order.paymentMethod === "COD");
+
+  const paidOrders = orders.filter(order => order.paymentMethod !== "COD");
+
   return res.status(StatusCodes.OK).json({
     status: "Successful",
     data: {
-      order
+      codOrders,
+      paidOrders
     }
   });
 });

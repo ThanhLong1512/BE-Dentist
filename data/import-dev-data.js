@@ -11,6 +11,8 @@ const TwoFA = require("./../models/TwoFAModel");
 const AccountSession = require("./../models/AccountsSessionModel");
 const Order = require("./../models/OrderModel");
 const Review = require("../models/ReviewModel");
+const Conservation = require("../models/ConservationModel");
+const Message = require("../models/MessageModel");
 
 dotenv.config({ path: "./config.env" });
 
@@ -53,6 +55,8 @@ const importData = async () => {
     await AccountSession.create();
     await Order.create();
     await Review.create();
+    await Conservation.create();
+    await Message.create();
     console.log("Data successfully loaded!");
   } catch (err) {
     console.log(err);

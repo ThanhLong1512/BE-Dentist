@@ -14,13 +14,11 @@ const appointmentSchema = new mongoose.Schema(
       type: Date,
       required: [true, "Please provide examination date"]
     },
-    shift: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Shift",
-        required: [true, "Please provide a valid shift"]
-      }
-    ]
+    shift: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Shift",
+      required: [true, "Please provide a valid shift"]
+    }
   },
   {
     toJSON: {
