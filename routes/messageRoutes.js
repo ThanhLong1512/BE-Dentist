@@ -7,7 +7,7 @@ const Router = express.Router();
 Router.use(authMiddleware.isAuthorized);
 Router.route("/")
   .get(messageController.getAllMessages)
-  .post(messageController.createMessage);
+  .post(messageController.setSenderIds, messageController.createMessage);
 Router.route("/:conservationID").get(
   messageController.getMessageByConservation
 );

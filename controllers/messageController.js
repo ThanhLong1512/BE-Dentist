@@ -2,6 +2,10 @@ const factory = require("./handlerFactory");
 const Message = require("../models/MessageModel");
 const CatchAsync = require("../utils/catchAsync");
 
+exports.setSenderIds = (req, res, next) => {
+  if (!req.body.senderID) req.body.senderID = req.user.id;
+  next();
+};
 exports.getAllMessages = factory.getAll(Message);
 exports.getMessageByID = factory.getOne(Message);
 exports.createMessage = factory.createOne(Message);
