@@ -8,4 +8,7 @@ Router.use(authMiddleware.isAuthorized);
 Router.route("/")
   .get(conservationController.getAllConservations)
   .post(conservationController.createConservationWithMembers);
+Router.route("/getConservationByMembers").get(
+  conservationController.getConservationByMembers
+);
 module.exports = Router;

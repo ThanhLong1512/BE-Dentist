@@ -8,5 +8,7 @@ Router.use(authMiddleware.isAuthorized);
 Router.route("/")
   .get(messageController.getAllMessages)
   .post(messageController.createMessage);
-
+Router.route("/:conservationID").get(
+  messageController.getMessageByConservation
+);
 module.exports = Router;

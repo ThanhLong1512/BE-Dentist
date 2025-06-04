@@ -9,13 +9,31 @@ exports.updateConservation = factory.updateOne(Conservation);
 exports.deleteConservation = factory.deleteOne(Conservation);
 
 exports.createConservationWithMembers = CatchAsync(async (req, res) => {
-  //   const Conservation = await Conservation.create({
-  //     member: [req.body.senderID, req.body.receiverID]
-  //   });
+  const newConservation = new Conservation({
+    member: [req.body.senderID, req.body.receiverID]
+  });
+  const savedConservation = await newConservation.save();
   res.status(201).json({
     status: "success",
     data: {
-      conservation: Conservation
+      conservation: savedConservation
+    }
+  });
+});
+exports.getConservationByMembers = CatchAsync(async (req, res) => {
+  const conservation = await Conservation.find({
+    member: { $in: [req.user.id] }
+  }).populate({
+    path: "member",
+    model: "Account",
+    select: "name email photo",
+    match: { _id: { $ne: req.user.id } }
+  });
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      conservation: conservation
     }
   });
 });
