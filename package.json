@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon server.js",
+    "dev": "nodemon socket.js",
     "import": "node data/import-dev-data.js --import",
     "export": "node data/import-dev-data.js --delete"
   },
