@@ -106,3 +106,38 @@ exports.deleteService = async (req, res) => {
     });
   }
 };
+
+exports.duplicateService = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const originalService = await Service.findById(id);
+    if (!originalService) {
+      return res.status(404).json({
+        success: false,
+        message: "Service not found"
+      });
+    }
+
+    const duplicatedService = await Service.create({
+      nameService: `Copy of ${originalService.nameService}`,
+      Unit: originalService.Unit,
+      priceService: originalService.priceService,
+      priceDiscount: originalService.priceDiscount,
+      description: originalService.description,
+      photoService: originalService.photoService
+    });
+
+    res.status(201).json({
+      message: "success",
+      data: {
+        data: duplicatedService
+      }
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+};

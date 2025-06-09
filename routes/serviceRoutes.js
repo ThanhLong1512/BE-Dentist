@@ -9,10 +9,8 @@ const Router = express.Router();
 Router.route("/").get(servicesController.getAllServices);
 Router.route("/:id").get(servicesController.getService);
 
-Router.use(
-  authMiddleware.isAuthorized,
-  rbacMiddleware.isPermission(["admin", "user"])
-);
+Router.use(authMiddleware.isAuthorized, rbacMiddleware.isPermission(["admin"]));
+Router.route("/duplicate/:id").post(servicesController.duplicateService);
 Router.route("/").post(servicesController.createService);
 Router.route("/:id")
   .patch(servicesController.updateService)
