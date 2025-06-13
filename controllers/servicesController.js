@@ -234,6 +234,7 @@ exports.duplicateService = async (req, res) => {
       priceService: originalService.priceService,
       priceDiscount: originalService.priceDiscount,
       description: originalService.description,
+      summary: originalService.summary,
       photoService: originalService.photoService
     });
 
