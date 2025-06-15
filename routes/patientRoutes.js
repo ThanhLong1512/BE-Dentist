@@ -13,7 +13,7 @@ Router.use(
 Router.route("/")
   .get(PatientController.getAllPatients)
   .post(PatientController.setAccountId, PatientController.createPatient);
-
+Router.route("/duplicate/:id").post(PatientController.duplicatePatient);
 Router.route("/:id")
   .get(PatientController.getPatient)
   .patch(PatientController.updatePatient)
