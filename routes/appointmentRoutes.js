@@ -26,7 +26,7 @@ Router.route("/:id")
     appointmentController.getAppointment
   )
   .patch(
-    rbacMiddleware.isPermission(["user"]),
+    rbacMiddleware.isPermission(["user", "admin"]),
     appointmentController.updateAppointment
   )
   .delete(
