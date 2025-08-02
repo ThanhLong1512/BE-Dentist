@@ -85,7 +85,15 @@ app.use(
     ]
   })
 );
-
+app.get("/", (req, res) => {
+  console.log("✅ Deployment Successful - Health check accessed");
+  res.status(200).json({
+    status: "success",
+    message: "Deployment Successful",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development"
+  });
+});
 // Compress responses
 app.use(compression());
 
