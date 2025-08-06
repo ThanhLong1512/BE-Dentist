@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
 const bcrypt = require("bcryptjs");
+const kms = require("../utils/kms");
 
 const accountSchema = new mongoose.Schema(
   {
@@ -116,6 +117,27 @@ accountSchema.methods.checkCurrentPassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
+// Method để mã hóa personal info
+accountSchema.methods.setPersonalInfo = async function(personalInfo) {
+  this.encryptedPersonalInfo = await kms.encryptJSON(personalInfo);
+};
+
+// Method để giải mã personal info
+accountSchema.methods.getPersonalInfo = async function() {
+  if (!this.encryptedPersonalInfo) return null;
+  return await kms.decryptJSON(this.encryptedPersonalInfo);
+};
+
+// Method để mã hóa payment info
+accountSchema.methods.setPaymentInfo = async function(paymentInfo) {
+  this.encryptedPaymentInfo = await kms.encryptJSON(paymentInfo);
+};
+
+// Method để giải mã payment info
+accountSchema.methods.getPaymentInfo = async function() {
+  if (!this.encryptedPaymentInfo) return null;
+  return await kms.decryptJSON(this.encryptedPaymentInfo);
+};
 const Account = mongoose.model("Account", accountSchema);
 
 module.exports = Account;
