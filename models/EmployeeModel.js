@@ -38,5 +38,11 @@ const employeeSchema = mongoose.Schema({
     required: [true, "Please provide the service ID"]
   }
 });
+employeeSchema.pre(/^find/, function(next) {
+  this.populate({
+    path: "service"
+  });
+  next();
+});
 const Employee = mongoose.model("Employee", employeeSchema);
 module.exports = Employee;

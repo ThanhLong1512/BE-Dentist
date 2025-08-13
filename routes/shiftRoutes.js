@@ -15,7 +15,7 @@ Router.route("/")
 
 Router.route("/:dayOfWeek").get(shiftController.getShiftsByDayOfWeek);
 
-Router.use(authMiddleware.isAuthorized, rbacMiddleware.isPermission(["user"]));
+Router.use(authMiddleware.isAuthorized, rbacMiddleware.isPermission(["admin"]));
 
 Router.route("/:id")
 
