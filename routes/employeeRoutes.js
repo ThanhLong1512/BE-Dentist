@@ -19,6 +19,10 @@ router
 router
   .route("/:id")
   .get(employeeController.getEmployee)
+  .post(
+    rbacMiddleware.isPermission(["admin"]),
+    employeeController.duplicateEmployee
+  )
   .patch(
     rbacMiddleware.isPermission(["admin"]),
     employeeController.updateEmployee

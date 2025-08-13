@@ -22,7 +22,6 @@ const employeeSchema = mongoose.Schema({
   },
   email: {
     type: String,
-    require: [true, "Please provide your email"],
     unique: true,
     validate: [validator.isEmail, "Please provide a valid email"]
   },
@@ -30,13 +29,8 @@ const employeeSchema = mongoose.Schema({
     type: String,
     required: [true, "Please provide the experience"]
   },
-  photo: {
-    type: String,
-    default: "default.jpg"
-  },
   description: {
-    type: String,
-    required: [true, "Please provide the description"]
+    type: String
   },
   service: {
     type: mongoose.Schema.Types.ObjectId,
