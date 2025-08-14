@@ -39,8 +39,8 @@ exports.getAccountByUser = CatchAsync(async (req, res) => {
 });
 exports.getAllAccounts = factory.getAll(Account);
 exports.getAccount = factory.getOne(Account);
-
-exports.updateAccount = CatchAsync(async (req, res) => {
+exports.updateAccount = factory.updateOne(Account);
+exports.updateMyAccount = CatchAsync(async (req, res) => {
   const userID = req.user.id;
   let updateData = { ...req.body };
 
@@ -107,8 +107,6 @@ exports.updateAccount = CatchAsync(async (req, res) => {
     }
   } else {
     try {
-      console.log("Update data received:", updateData);
-
       if (updateData.password || updateData.currentPassword) {
         const user = await Account.findById(userID).select("+password");
         if (!user) {

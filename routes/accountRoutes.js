@@ -12,8 +12,14 @@ router.route("/").get(accountController.getAllAccounts);
 router.route("/me").get(accountController.getAccountByUser);
 router
   .route("/updateMe")
-  .patch(uploadMiddleware.uploadUserPhoto, accountController.updateAccount);
+  .patch(uploadMiddleware.uploadUserPhoto, accountController.updateMyAccount);
 
-router.route("/:id").get(accountController.getAccount);
+router
+  .route("/:id")
+  .get(accountController.getAccount)
+  .patch(
+    rbacMiddleware.isPermission(["admin", "user"]),
+    accountController.updateAccount
+  );
 
 module.exports = router;
