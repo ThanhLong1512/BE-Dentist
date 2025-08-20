@@ -69,6 +69,7 @@ const login = CatchAsync(async (req, res, next) => {
 
   const payLoad = {
     id: user._id,
+    name: user.name,
     email: user.email,
     role: user.role,
     image: user.photo,
@@ -164,6 +165,7 @@ const register = CatchAsync(async (req, res) => {
     const payLoad = {
       id: newUser._id,
       email: newUser.email,
+      name: newUser.name,
       role: newUser.role,
       image: newUser.photo,
       require_2FA: newUser.require_2FA,
