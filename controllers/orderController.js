@@ -69,7 +69,8 @@ exports.getRevenueByPeriod = CatchAsync(async (req, res, next) => {
   return res.status(StatusCodes.OK).json({
     status: "success",
     data: {
-      totalRevenue
+      totalRevenue,
+      orders
     }
   });
 });
