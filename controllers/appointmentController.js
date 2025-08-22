@@ -68,6 +68,38 @@ exports.getAppointmentByUser = catchAsync(async (req, res) => {
     }
   });
 });
+exports.getAppointmentByPeriod = catchAsync(async (req, res, next) => {
+  const { period } = req.params;
+
+  const validPeriods = [7, 30, 90];
+  const periodNumber = parseInt(period);
+
+  if (!validPeriods.includes(periodNumber)) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      status: "error",
+      message: "Invalid period. Please use 7, 30, or 90 days"
+    });
+  }
+
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(endDate.getDate() - periodNumber);
+
+  const appointments = await Appointment.find({
+    Date: {
+      $gte: startDate,
+      $lte: endDate
+    }
+  })
+  .sort({ Date: -1 });
+
+  return res.status(StatusCodes.OK).json({
+    status: "Successful",
+    data: {
+      count: appointments.length
+    }
+  });
+});
 exports.getAllAppointments = factory.getAll(Appointment);
 exports.getAppointment = factory.getOne(Appointment);
 exports.updateAppointment = factory.updateOne(Appointment);

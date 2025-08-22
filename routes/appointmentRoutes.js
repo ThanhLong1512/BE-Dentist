@@ -10,6 +10,10 @@ Router.route("/getMyAppointment").get(
   rbacMiddleware.isPermission(["admin", "user"]),
   appointmentController.getAppointmentByUser
 );
+Router.route("/getByPeriod/:period").get(
+  rbacMiddleware.isPermission(["admin"]),
+  appointmentController.getAppointmentByPeriod
+);
 
 Router.route("/")
   .get(

@@ -14,7 +14,7 @@ const orderSchema = new mongoose.Schema(
         required: [true, "Please provide a valid service"]
       }
     ],
-    createAt: {
+    createdAt: {
       type: Date,
       default: Date.now
     },

@@ -38,3 +38,38 @@ exports.getOrderByUser = CatchAsync(async (req, res) => {
     }
   });
 });
+exports.getRevenueByPeriod = CatchAsync(async (req, res, next) => {
+  const { period } = req.params;
+
+  const validPeriods = [7, 30, 90];
+  const periodNumber = parseInt(period);
+
+  if (!validPeriods.includes(periodNumber)) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      status: "error",
+      message: "Invalid period. Please use 7, 30, or 90 days"
+    });
+  }
+
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(endDate.getDate() - periodNumber);
+
+  const orders = await Order.find({
+    createdAt: {
+      $gte: startDate,
+      $lte: endDate
+    }
+  });
+  const totalRevenue = orders.reduce(
+    (sum, order) => sum + (order.totalPrice || 0),
+    0
+  );
+
+  return res.status(StatusCodes.OK).json({
+    status: "success",
+    data: {
+      totalRevenue
+    }
+  });
+});

@@ -9,6 +9,10 @@ Router.use(
   rbacMiddleware.isPermission(["admin", "user"])
 );
 Router.route("/getOrderByUser").get(orderController.getOrderByUser);
+Router.route("/getRevenueByPeriod/:period").get(
+  rbacMiddleware.isPermission(["admin"]),
+  orderController.getRevenueByPeriod
+);
 Router.route("/").get(orderController.getAllOrders);
 Router.route("/:id").get(orderController.getOrderByID);
 
