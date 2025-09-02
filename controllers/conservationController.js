@@ -15,7 +15,6 @@ exports.deleteConservation = factory.deleteOne(Conservation);
 exports.createConservationWithMembers = CatchAsync(async (req, res) => {
   const senderID = req.body.senderID;
   const adminID = process.env.ADMIN_ID;
-
   const existingConservation = await Conservation.findOne({
     member: { $all: [senderID, adminID] }
   });
