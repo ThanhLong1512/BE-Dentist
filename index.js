@@ -10,7 +10,9 @@ const hpp = require("hpp");
 const compression = require("compression");
 
 const AppError = require("./utils/appError");
+
 const globalErrorHandler = require("./controllers/errorController");
+
 const authRouter = require("./routes/authRoutes");
 const employeeRoutes = require("./routes/employeeRoutes");
 const patientRoutes = require("./routes/patientRoutes");
@@ -21,12 +23,15 @@ const shiftRoutes = require("./routes/shiftRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+const conservationRoutes = require("./routes/conservationRoutes");
+const messageRoutes = require("./routes/messageRoutes");
+
 const corsOption = require("./config/corsOption");
 
 const app = express();
 
 // Set timeout to 10 seconds
-app.use(timeout("10s"));
+// app.use(timeout("10s"));
 
 // Trust only the loopback interface (localhost)
 app.set("trust proxy", "loopback");
@@ -47,15 +52,15 @@ app.use(
 );
 
 // Rate limiting middleware with custom keyGenerator
-// const limiter = rateLimit({
-//   max: 100,
-//   windowMs: 60 * 60 * 1000,
-//   message: "Too many requests from this IP, please try again in an hour!",
-//   keyGenerator: req => {
-//     return req.headers["x-forwarded-for"]?.split(",")[0] || req.ip;
-//   }
-// });
-// app.use("/api", limiter);
+const limiter = rateLimit({
+  max: 100,
+  windowMs: 60 * 60 * 1000,
+  message: "Too many requests from this IP, please try again in an hour!",
+  keyGenerator: req => {
+    return req.headers["x-forwarded-for"]?.split(",")[0] || req.ip;
+  }
+});
+app.use("/api", limiter);
 
 // Parse JSON and URL-encoded bodies
 app.use(express.json({ limit: "10kb" }));
@@ -80,7 +85,15 @@ app.use(
     ]
   })
 );
-
+app.get("/", (req, res) => {
+  console.log("✅ Deployment Successful - Health check accessed");
+  res.status(200).json({
+    status: "success",
+    message: "Deployment Successful",
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || "development"
+  });
+});
 // Compress responses
 app.use(compression());
 
@@ -95,6 +108,9 @@ app.use("/api/v1/shifts", shiftRoutes);
 app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/reviews", reviewRoutes);
+app.use("/api/v1/conservations", conservationRoutes);
+app.use("/api/v1/messages", messageRoutes);
+
 // // Import routes
 
 // Handle 404 errors

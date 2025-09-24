@@ -4,6 +4,11 @@ const authMiddleware = require("./../middlewares/authMiddleware");
 
 const Router = express.Router();
 Router.post(
+  "/paymentWithCOD",
+  authMiddleware.isAuthorized,
+  paymentController.paymentWithCOD
+);
+Router.post(
   "/paymentWithMoMo",
   authMiddleware.isAuthorized,
   paymentController.paymentWithMoMo

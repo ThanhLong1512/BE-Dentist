@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { populateAccountAndService } = require("../middlewares/orderMiddleware");
 const orderSchema = new mongoose.Schema(
   {
     account: {
@@ -13,14 +14,15 @@ const orderSchema = new mongoose.Schema(
         required: [true, "Please provide a valid service"]
       }
     ],
-    createAt: {
+    createdAt: {
       type: Date,
       default: Date.now
     },
     status: {
       type: String,
-      enum: ["Successful.", "Cancelled"],
-      required: [true, "Please provide the order status"]
+      enum: ["Successful", "Cancelled", "Processing"],
+      required: [true, "Please provide the order status"],
+      default: "Processing"
     },
     totalPrice: {
       type: Number,
@@ -40,5 +42,7 @@ const orderSchema = new mongoose.Schema(
     }
   }
 );
+
+orderSchema.pre(/^find/, populateAccountAndService);
 const Order = mongoose.model("Order", orderSchema);
 module.exports = Order;

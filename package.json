@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon server.js",
+    "dev": "nodemon socket.js",
     "import": "node data/import-dev-data.js --import",
     "export": "node data/import-dev-data.js --delete"
   },
@@ -15,6 +16,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "aws-sdk": "^2.1692.0",
     "axios": "^1.9.0",
     "bcryptjs": "^3.0.2",
     "be-dentist": "file:",
@@ -37,12 +39,17 @@
     "moment": "^2.30.1",
     "mongoose": "^8.10.1",
     "ms": "^2.1.3",
+    "multer": "^2.0.0",
     "nodemailer": "^7.0.2",
     "otplib": "^12.0.1",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "qrcode": "^1.5.4",
+    "redis": "^5.8.2",
     "slugify": "^1.6.6",
+    "socket.io": "^4.8.1",
+    "stream": "^0.0.3",
+    "twilio": "^5.7.1",
     "validator": "^13.12.0",
     "vnpay": "^2.2.0",
     "xss-clean": "^0.1.4"

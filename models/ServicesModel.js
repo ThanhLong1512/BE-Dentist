@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { trim } = require("validator");
+const { populateReviews } = require("../middlewares/serviceMiddleware");
 
 const serviceSchema = mongoose.Schema(
   {
@@ -27,7 +28,7 @@ const serviceSchema = mongoose.Schema(
     },
     summary: {
       type: String,
-      require: [true, "A service must have a summary"],
+      required: [true, "A service must have a summary"],
       trim: true
     },
     description: {
@@ -40,13 +41,13 @@ const serviceSchema = mongoose.Schema(
       select: false
     },
     priceDiscount: {
-      type: Number,
-      validate: {
-        validator: function(val) {
-          return val < this.priceService;
-        },
-        message: "Discount price ({VALUE}) should be below regular price"
-      }
+      type: Number
+      // validate: {
+      //   validator: function(val) {
+      //     return val < this.priceService;
+      //   },
+      //   message: "Discount price ({VALUE}) should be below regular price"
+      // }
     },
     ratingsAverage: {
       type: Number,
@@ -65,11 +66,15 @@ const serviceSchema = mongoose.Schema(
     toObject: { virtuals: true }
   }
 );
+serviceSchema.index({ nameService: 1 });
+serviceSchema.index({ createdAt: -1 });
 serviceSchema.virtual("reviews", {
   ref: "Review",
   foreignField: "service",
   localField: "_id"
 });
+
+serviceSchema.pre(/^find/, populateReviews);
 
 const Service = mongoose.model("Service", serviceSchema);
 module.exports = Service;

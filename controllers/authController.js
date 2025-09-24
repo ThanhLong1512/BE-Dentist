@@ -5,6 +5,7 @@ const { OAuth2Client } = require("google-auth-library");
 const axios = require("axios");
 const ms = require("ms");
 const nodemailer = require("nodemailer");
+const twilio = require("twilio");
 const JwtProvider = require("./../providers/JwtProvider");
 const GoogleProvider = require("./../providers/GoogleProvider");
 const CatchAsync = require("./../utils/catchAsync");
@@ -12,6 +13,34 @@ const AppError = require("../utils/appError");
 const Account = require("../models/AccountModel");
 const TwoFA = require("../models/TwoFAModel");
 const AccountSession = require("../models/AccountsSessionModel");
+let client;
+try {
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_ACCOUNT_TOKEN) {
+    throw new Error("Missing Twilio credentials");
+  }
+
+  client = twilio(
+    process.env.TWILIO_ACCOUNT_SID,
+    process.env.TWILIO_ACCOUNT_TOKEN
+  );
+  console.log("Twilio client initialized successfully");
+} catch (error) {
+  console.error("Failed to initialize Twilio:", error.message);
+}
+const sendSMS = async (phoneNumber, message) => {
+  try {
+    const response = await client.messages.create({
+      body: message,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: phoneNumber
+    });
+    console.log("SMS sent successfully:", response.sid);
+    return response;
+  } catch (error) {
+    console.error("SMS Error Details:", error);
+    throw new AppError(`Failed to send SMS: ${error.message}`, 500);
+  }
+};
 
 const login = CatchAsync(async (req, res, next) => {
   const { email, password } = req.body;
@@ -40,8 +69,10 @@ const login = CatchAsync(async (req, res, next) => {
 
   const payLoad = {
     id: user._id,
+    name: user.name,
     email: user.email,
     role: user.role,
+    image: user.photo,
     require_2FA: user.require_2FA,
     is_2fa_verified: newAccountSession.is_2fa_verified,
     last_login: newAccountSession.last_login
@@ -124,21 +155,34 @@ const register = CatchAsync(async (req, res) => {
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm
   });
-  const newAccountSession = await AccountSession.create({
-    user_id: newUser._id,
-    device_id: req.headers["user-agent"],
-    is_2fa_verified: false,
-    last_login: new Date().valueOf()
-  });
-  const payLoad = {
-    id: newUser._id,
-    email: newUser.email,
-    role: newUser.role,
-    require_2FA: newUser.require_2FA,
-    is_2fa_verified: newAccountSession.is_2fa_verified,
-    last_login: newAccountSession.last_login
-  };
-  await createSendToken(payLoad, req, res);
+  if (newUser) {
+    const newAccountSession = await AccountSession.create({
+      user_id: newUser._id,
+      device_id: req.headers["user-agent"],
+      is_2fa_verified: false,
+      last_login: new Date().valueOf()
+    });
+    const payLoad = {
+      id: newUser._id,
+      email: newUser.email,
+      name: newUser.name,
+      role: newUser.role,
+      image: newUser.photo,
+      require_2FA: newUser.require_2FA,
+      is_2fa_verified: newAccountSession.is_2fa_verified,
+      last_login: newAccountSession.last_login
+    };
+    await createSendToken(payLoad, req, res);
+    try {
+      const response = await sendSMS(
+        "+84348859428",
+        "Congratulations, you have successfully registered an account at the Cheese Clinic. If you have any questions, please send a message via this link"
+      );
+      console.log("SMS sent successfully:", response.sid);
+    } catch (error) {
+      console.error("Failed to send SMS:", error.message);
+    }
+  }
 });
 
 const createSendToken = async (payLoad, req, res) => {

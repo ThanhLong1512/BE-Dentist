@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
 const {
   getShiftsByToday,
-  filterBookedShift
+  filterBookedShift,
+  populateEmployeeAndService
 } = require("../middlewares/shiftMiddleware");
 const shiftSchema = new mongoose.Schema({
   employee: {
@@ -36,5 +37,6 @@ const shiftSchema = new mongoose.Schema({
   }
 });
 shiftSchema.pre(/^find/, filterBookedShift);
+shiftSchema.pre(/^find/, populateEmployeeAndService);
 const Shift = mongoose.model("Shift", shiftSchema);
 module.exports = Shift;

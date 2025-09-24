@@ -4,6 +4,7 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const corsOptions = require("./config/corsOption");
+const { initRedis } = require("./providers/RedisProvider");
 
 const app = require("./index");
 dotenv.config({ path: "./config.env" });
@@ -20,6 +21,9 @@ app.use((req, res, next) => {
 // Connect to MongoDB and start server
 const START_SERVER = async () => {
   try {
+    // Connect to Redis before start the server
+    await initRedis();
+
     const DB_URI = process.env.DATABASE.replace(
       "<PASSWORD>",
       process.env.DATABASE_PASSWORD
@@ -29,7 +33,7 @@ const START_SERVER = async () => {
     console.log("✅ Database connected successfully");
 
     // Set host and port with fallback values
-    const host = process.env.LOCAL_DEV_APP_HOST || "127.0.0.1";
+    const host = process.env.LOCAL_DEV_APP_HOST || "0.0.0.0";
     const port = process.env.LOCAL_DEV_APP_PORT || 3000;
 
     return new Promise((resolve, reject) => {

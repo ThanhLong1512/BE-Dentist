@@ -5,12 +5,15 @@ const rbacMiddleware = require("../middlewares/rbacMiddleware");
 
 const Router = express.Router({ mergeParams: true });
 
-Router.use(authMiddleware.isAuthorized, rbacMiddleware.isPermission(["admin"]));
+Router.use(
+  authMiddleware.isAuthorized,
+  rbacMiddleware.isPermission(["admin", "user"])
+);
 
 Router.route("/")
   .get(PatientController.getAllPatients)
   .post(PatientController.setAccountId, PatientController.createPatient);
-
+Router.route("/duplicate/:id").post(PatientController.duplicatePatient);
 Router.route("/:id")
   .get(PatientController.getPatient)
   .patch(PatientController.updatePatient)

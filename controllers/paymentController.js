@@ -19,6 +19,19 @@ const {
   vnPayConfig
 } = require("../config/paymentConfig");
 
+const paymentWithCOD = CatchAsync(async (req, res) => {
+  const totalPrice = req.body.totalPrice;
+  const service = req.body.service;
+  await Order.create({
+    account: req.user.id,
+    service: service,
+    paymentMethod: "COD",
+    totalPrice: totalPrice
+  });
+  return res.status(StatusCodes.OK).json({
+    status: "Successfully Order"
+  });
+});
 const paymentWithMoMo = CatchAsync(async (req, res) => {
   const totalPrice = req.body.totalPrice;
   const service = req.body.service;
@@ -203,6 +216,7 @@ const paymentWithVnPay = CatchAsync(async (req, res) => {
     }
   });
 });
+
 const callbackZaloPay = CatchAsync(async (req, res) => {
   let result = {};
   let dataStr = req.body.data;
@@ -216,35 +230,27 @@ const callbackZaloPay = CatchAsync(async (req, res) => {
     return res.status(400).json(result);
   }
 
-  try {
-    let dataJson = JSON.parse(dataStr);
-    let embedData = JSON.parse(dataJson.embed_data);
-    const customData = embedData.customData;
-    const account = customData.account;
-    const services = customData.service;
+  let dataJson = JSON.parse(dataStr);
+  let embedData = JSON.parse(dataJson.embed_data);
+  const customData = embedData.customData;
+  const account = customData.account;
+  const services = customData.service;
 
-    await Order.create({
-      account: account,
-      service: services,
-      status: "Successful.",
-      totalPrice: dataJson.amount,
-      paymentMethod: "ZaloPay"
-    });
+  await Order.create({
+    account: account,
+    service: services,
+    status: "Successful",
+    totalPrice: dataJson.amount,
+    paymentMethod: "ZaloPay"
+  });
 
-    return res.status(200).json({
-      message: "Successful",
-      account: account,
-      services: services
-    });
-  } catch (error) {
-    return res.status(500).json({
-      return_code: -1,
-      return_message: "Error processing callback"
-    });
-  }
+  return res.status(StatusCodes.OK).json({
+    message: "Successful",
+    account: account,
+    services: services
+  });
 });
 const callbackMoMo = CatchAsync(async (req, res) => {
-  console.log("callbackMoMo", req.body);
   let extraDataObj = {};
   if (req.body.extraData) {
     const decodedExtraData = Buffer.from(
@@ -253,11 +259,10 @@ const callbackMoMo = CatchAsync(async (req, res) => {
     ).toString();
     extraDataObj = JSON.parse(decodedExtraData);
   }
-  console.log("extraDataObj", extraDataObj);
   await Order.create({
     account: extraDataObj.account,
     service: extraDataObj.service,
-    status: req.body.message,
+    status: "Successful",
     paymentMethod: req.body.payType + "-" + req.body.partnerCode,
     totalPrice: req.body.amount
   });
@@ -279,6 +284,7 @@ const callbackVnPay = CatchAsync(async (req, res) => {
 });
 const paymentController = {
   paymentWithMoMo,
+  paymentWithCOD,
   paymentWithZaloPay,
   paymentWithVnPay,
   callbackZaloPay,

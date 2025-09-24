@@ -8,10 +8,16 @@ const router = express.Router({ mergeParams: true });
 router.use(authMiddleware.isAuthorized);
 
 router
+  .route("/getReviewStatsByPeriod/:period")
+  .get(
+    rbacMiddleware.isPermission(["admin"]),
+    reviewController.getReviewStatsByPeriod
+  );
+router
   .route("/")
   .get(reviewController.getAllReviews)
   .post(
-    rbacMiddleware.isPermission(["user"]),
+    rbacMiddleware.isPermission(["user", "admin"]),
     reviewController.setServiceUserIds,
     reviewController.createReview
   );

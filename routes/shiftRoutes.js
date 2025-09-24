@@ -6,7 +6,7 @@ const rbacMiddleware = require("../middlewares/rbacMiddleware");
 const Router = express.Router();
 
 Router.route("/")
-  .get(shiftController.getShifts)
+  .get(shiftController.getAllShift)
   .post(
     authMiddleware.isAuthorized,
     rbacMiddleware.isPermission(["admin"]),
@@ -18,8 +18,8 @@ Router.route("/:dayOfWeek").get(shiftController.getShiftsByDayOfWeek);
 Router.use(authMiddleware.isAuthorized, rbacMiddleware.isPermission(["admin"]));
 
 Router.route("/:id")
-  .get(shiftController.getShiftById)
-  .put(shiftController.updateShift)
+
+  .patch(shiftController.updateShift)
   .delete(shiftController.deleteShift);
 
 module.exports = Router;
