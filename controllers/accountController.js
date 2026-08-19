@@ -1,4 +1,6 @@
 const Account = require("./../models/AccountModel");
+const AccountSession = require("./../models/AccountsSessionModel");
+const TwoFA = require("./../models/TwoFAModel");
 const factory = require("./handlerFactory");
 const CatchAsync = require("./../utils/catchAsync");
 const cloudinary = require("../providers/CloudinaryProvider");
@@ -26,10 +28,11 @@ exports.getAccountByUser = CatchAsync(async (req, res) => {
       .status(StatusCodes.NOT_FOUND)
       .json({ message: "No one order for this account" });
   }
+  // Tạm thời comment - không dùng AWS KMS nữa
   // Mã hóa dữ liệu nhạy cảm bằng aws-kms
-  if (account) {
-    await account.setPersonalInfo(userID);
-  }
+  // if (account) {
+  //   await account.setPersonalInfo(userID);
+  // }
   return res.status(StatusCodes.OK).json({
     status: "Successful",
     data: {
@@ -177,4 +180,76 @@ exports.updateMyAccount = CatchAsync(async (req, res) => {
       });
     }
   }
+});
+
+// User xóa tài khoản của chính mình (yêu cầu xác nhận mật khẩu)
+exports.deleteMyAccount = CatchAsync(async (req, res) => {
+  const userID = req.user.id;
+  const { password } = req.body;
+
+  if (!password) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      status: "Failed",
+      message: "Please provide your password to confirm account deletion"
+    });
+  }
+
+  const account = await Account.findById(userID).select("+password");
+  if (!account) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      status: "Failed",
+      message: "Account not found"
+    });
+  }
+
+  const isPasswordCorrect = await bcrypt.compare(password, account.password);
+  if (!isPasswordCorrect) {
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      status: "Failed",
+      message: "Incorrect password. Account deletion cancelled"
+    });
+  }
+
+  // Xóa dữ liệu liên quan trước
+  await AccountSession.deleteMany({ user_id: userID });
+  await TwoFA.deleteMany({ user_id: userID });
+  await Account.findByIdAndDelete(userID);
+
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+
+  return res.status(StatusCodes.OK).json({
+    status: "Success",
+    message: "Your account has been deleted successfully"
+  });
+});
+
+// Admin xóa tài khoản khác
+exports.deleteAccount = CatchAsync(async (req, res) => {
+  const accountId = req.params.id;
+  const currentUserId = req.user.id;
+
+  if (accountId === currentUserId) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      status: "Failed",
+      message: "Use deleteMe endpoint to delete your own account"
+    });
+  }
+
+  const account = await Account.findById(accountId);
+  if (!account) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      status: "Failed",
+      message: "Account not found"
+    });
+  }
+
+  await AccountSession.deleteMany({ user_id: accountId });
+  await TwoFA.deleteMany({ user_id: accountId });
+  await Account.findByIdAndDelete(accountId);
+
+  return res.status(StatusCodes.OK).json({
+    status: "Success",
+    message: "Account deleted successfully"
+  });
 });

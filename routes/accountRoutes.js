@@ -13,6 +13,7 @@ router.route("/me").get(accountController.getAccountByUser);
 router
   .route("/updateMe")
   .patch(uploadMiddleware.uploadUserPhoto, accountController.updateMyAccount);
+router.route("/deleteMe").delete(accountController.deleteMyAccount);
 
 router
   .route("/:id")
@@ -20,6 +21,10 @@ router
   .patch(
     rbacMiddleware.isPermission(["admin", "user"]),
     accountController.updateAccount
+  )
+  .delete(
+    rbacMiddleware.isPermission(["admin"]),
+    accountController.deleteAccount
   );
 
 module.exports = router;

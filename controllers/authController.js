@@ -173,15 +173,15 @@ const register = CatchAsync(async (req, res) => {
       last_login: newAccountSession.last_login
     };
     await createSendToken(payLoad, req, res);
-    try {
-      const response = await sendSMS(
-        "+84348859428",
-        "Congratulations, you have successfully registered an account at the Cheese Clinic. If you have any questions, please send a message via this link"
-      );
-      console.log("SMS sent successfully:", response.sid);
-    } catch (error) {
-      console.error("Failed to send SMS:", error.message);
-    }
+    // try {
+    //   const response = await sendSMS(
+    //     "+84348859428",
+    //     "Congratulations, you have successfully registered an account at the Cheese Clinic. If you have any questions, please send a message via this link"
+    //   );
+    //   console.log("SMS sent successfully:", response.sid);
+    // } catch (error) {
+    //   console.error("Failed to send SMS:", error.message);
+    // }
   }
 });
 
@@ -343,42 +343,86 @@ const verify2FA = CatchAsync(async (req, res) => {
   });
 });
 const loginGoogle = CatchAsync(async (req, res) => {
-  const { token } = req.body;
-  const InfoGoogle = await GoogleProvider.verify(token);
-  const { name, email: googleEmail, sub } = InfoGoogle;
+  // Hỗ trợ cả "token" và "credential" (Google One Tap / Sign-In trả về credential)
+  const idToken = req.body.token || req.body.credential;
+
+  if (!idToken) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Google ID token is required. Send 'token' or 'credential' in request body."
+    });
+  }
+
+  const InfoGoogle = await GoogleProvider.verify(idToken);
+  const { name, email: googleEmail, sub, picture } = InfoGoogle;
+
   let normalizedEmail = "";
   if (googleEmail) {
     normalizedEmail = googleEmail.replace(/\s/g, "").toLowerCase();
   }
-  const user = await Account.findOne({ googleID: sub });
-  let newUser, payLoad;
 
-  if (!user) {
-    newUser = await Account.create({
-      name,
-      email: normalizedEmail,
-      googleID: sub,
-      password: normalizedEmail + process.env.GOOGLE_CLIENT_ID,
-      passwordConfirm: normalizedEmail + process.env.GOOGLE_CLIENT_ID
+  if (!normalizedEmail) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Google account does not provide email. Please use another sign-in method."
     });
-    const newAccountSession = await AccountSession.create({
-      user_id: newUser._id,
-      device_id: req.headers["user-agent"],
-      is_2fa_verified: false,
-      last_login: new Date().valueOf()
-    });
-  } else {
-    newUser = user;
   }
 
-  payLoad = {
+  let user = await Account.findOne({ googleID: sub });
+  let newUser;
+  let newAccountSession;
+
+  if (!user) {
+    // Kiểm tra email đã tồn tại (đăng ký bằng email thường trước đó)
+    const existingByEmail = await Account.findOne({ email: normalizedEmail });
+    if (existingByEmail) {
+      // Liên kết tài khoản Google với account đã có
+      existingByEmail.googleID = sub;
+      if (picture) existingByEmail.photo = picture;
+      newUser = await existingByEmail.save();
+    } else {
+      newUser = await Account.create({
+        name: name || "Google User",
+        email: normalizedEmail,
+        googleID: sub,
+        photo: picture || undefined,
+        password: normalizedEmail + process.env.GOOGLE_CLIENT_ID,
+        passwordConfirm: normalizedEmail + process.env.GOOGLE_CLIENT_ID
+      });
+    }
+  } else {
+    newUser = user;
+    // Cập nhật ảnh nếu có thay đổi
+    if (picture && user.photo !== picture) {
+      newUser.photo = picture;
+      await newUser.save();
+    }
+  }
+
+  // Tạo session cho cả user mới và user đã tồn tại
+  newAccountSession = await AccountSession.create({
+    user_id: newUser._id,
+    device_id: req.headers["user-agent"],
+    is_2fa_verified: false,
+    last_login: new Date().valueOf()
+  });
+
+  if (newUser.isLocked) {
+    return res.status(StatusCodes.FORBIDDEN).json({
+      message:
+        "Your account has been locked. Please contact admin for more information."
+    });
+  }
+
+  const payLoad = {
     id: newUser._id,
+    name: newUser.name,
     email: newUser.email,
     role: newUser.role,
+    image: newUser.photo,
     require_2FA: newUser.require_2FA,
     is_2fa_verified: newAccountSession.is_2fa_verified,
     last_login: newAccountSession.last_login
   };
+
   await createSendToken(payLoad, req, res);
 });
 const loginFacebook = CatchAsync(async (req, res) => {
@@ -388,8 +432,8 @@ const loginFacebook = CatchAsync(async (req, res) => {
       message: "Access token is required"
     });
   }
-  let response = await axios.get(
-    `https://graph.facebook.com/me?access_token=${accessToken}&fields=id,name,email`
+  const response = await axios.get(
+    `https://graph.facebook.com/me?access_token=${accessToken}&fields=id,name,email,picture`
   );
   const { id, name, email: facebookEmail } = response.data;
   if (!id) {
@@ -397,30 +441,52 @@ const loginFacebook = CatchAsync(async (req, res) => {
       message: "Invalid access token"
     });
   }
-  const account = await Account.findOne({ faceBookID: id });
+
+  const normalizedEmail = (facebookEmail || `${id}@facebook.com`)
+    .replace(/\s/g, "")
+    .toLowerCase();
+
+  const account = await Account.findOne({ facebookID: id });
   let newUser;
 
   if (!account) {
-    newUser = await Account.create({
-      name,
-      email: facebookEmail,
-      facebookID: id,
-      password: normalizedEmail + process.env.FACEBOOK_CLIENT_ID,
-      passwordConfirm: normalizedEmail + process.env.FACEBOOK_CLIENT_SECRET
-    });
+    const existingByEmail = await Account.findOne({ email: normalizedEmail });
+    if (existingByEmail) {
+      existingByEmail.facebookID = id;
+      newUser = await existingByEmail.save();
+    } else {
+      newUser = await Account.create({
+        name: name || "Facebook User",
+        email: normalizedEmail,
+        facebookID: id,
+        password: normalizedEmail + process.env.FACEBOOK_CLIENT_ID,
+        passwordConfirm: normalizedEmail + process.env.FACEBOOK_CLIENT_ID
+      });
+    }
   } else {
     newUser = account;
   }
+
   const newAccountSession = await AccountSession.create({
     user_id: newUser._id,
     device_id: req.headers["user-agent"],
     is_2fa_verified: false,
     last_login: new Date().valueOf()
   });
+
+  if (newUser.isLocked) {
+    return res.status(StatusCodes.FORBIDDEN).json({
+      message:
+        "Your account has been locked. Please contact admin for more information."
+    });
+  }
+
   const payLoad = {
     id: newUser._id,
+    name: newUser.name,
     email: newUser.email,
     role: newUser.role,
+    image: newUser.photo,
     require_2FA: newUser.require_2FA,
     is_2fa_verified: newAccountSession.is_2fa_verified,
     last_login: newAccountSession.last_login

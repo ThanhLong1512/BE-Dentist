@@ -1,53 +1,25 @@
-const AWS = require("aws-sdk");
+// Tạm thời comment - không dùng AWS KMS nữa
+// const AWS = require("aws-sdk");
 
-AWS.config.update({
-  region: "ap-southeast-1"
-});
+// AWS.config.update({
+//   region: "ap-southeast-1"
+// });
 
-const kms = new AWS.KMS();
+// const kms = new AWS.KMS();
 
 class KMSService {
   constructor() {
-    this.keyAlias = "alias/website-key";
+    // this.keyAlias = "alias/website-key";
   }
 
   async encrypt(plaintext) {
-    try {
-      console.log("Encrypting data...");
-
-      const params = {
-        KeyId: this.keyAlias,
-        Plaintext: Buffer.from(plaintext, "utf8")
-      };
-
-      const result = await kms.encrypt(params).promise();
-      const encrypted = result.CiphertextBlob.toString("base64");
-
-      console.log("Data encrypted successfully");
-      return encrypted;
-    } catch (error) {
-      console.error("Encryption failed:", error.message);
-      throw error;
-    }
+    // Pass-through: không mã hóa, trả về base64 để giữ interface
+    return Buffer.from(plaintext, "utf8").toString("base64");
   }
 
   async decrypt(encryptedData) {
-    try {
-      console.log("Decrypting data...");
-
-      const params = {
-        CiphertextBlob: Buffer.from(encryptedData, "base64")
-      };
-
-      const result = await kms.decrypt(params).promise();
-      const decrypted = result.Plaintext.toString("utf8");
-
-      console.log("Data decrypted successfully");
-      return decrypted;
-    } catch (error) {
-      console.error("Decryption failed:", error.message);
-      throw error;
-    }
+    // Pass-through: giải mã base64
+    return Buffer.from(encryptedData, "base64").toString("utf8");
   }
 
   async encryptJSON(object) {
