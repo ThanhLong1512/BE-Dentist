@@ -10,6 +10,8 @@ const {
   emitAppointmentUpdated,
   emitNotification
 } = require("../providers/socketProvider");
+const { invalidateSlotCacheByDateKey } = require("./slotCacheService");
+const { getSlotDateKey } = require("../utils/slotDate");
 
 const VALID_STATUSES = [
   "scheduled",
@@ -70,6 +72,12 @@ const updateAppointmentStatus = async (appointmentId, status, actorUser) => {
     appointmentId: populated._id.toString()
   });
 
+  if (appointment.Date) {
+    await invalidateSlotCacheByDateKey({
+      dateKey: getSlotDateKey(appointment.Date),
+    });
+  }
+
   return { appointment: populated };
 };
 
@@ -108,6 +116,12 @@ const rescheduleAppointment = async (appointmentId, payload, actorUser) => {
     appointmentId,
     payload.reason || "Bac si/phong kham da thay doi lich hen cua ban."
   );
+
+  if (appointment.Date) {
+    await invalidateSlotCacheByDateKey({
+      dateKey: getSlotDateKey(appointment.Date),
+    });
+  }
 
   const populated = await populateAppointment(Appointment.findById(appointmentId));
   emitAppointmentUpdated(populated);

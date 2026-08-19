@@ -13,9 +13,11 @@ const {
   acquireConfirmLock,
   releaseConfirmLock
 } = require("../utils/holdSeat");
-const { normalizeSlotDate, getDayRange } = require("../utils/slotDate");
+const { normalizeSlotDate, getDayRange, getSlotDateKey } = require("../utils/slotDate");
 const { scheduleAppointmentReminders } = require("./appointmentNotificationService");
 const { emitAppointmentUpdated } = require("../providers/socketProvider");
+const { invalidateSlotCacheByDateKey } = require("./slotCacheService");
+const { generateAvailableSlots } = require("./slotGenerationService");
 
 const expireStaleReservations = async (shiftId, slotDate) => {
   const { start, end } = getDayRange(slotDate);
@@ -35,6 +37,7 @@ const hasConfirmedAppointment = async (shiftId, slotDate, excludeAppointmentId =
   const existing = await Appointment.findOne({
     shift: shiftId,
     Date: { $gte: start, $lte: end },
+    status: { $nin: ["cancelled", "completed"] },
     ...(excludeAppointmentId ? { _id: { $ne: excludeAppointmentId } } : {})
   });
   return Boolean(existing);
@@ -44,8 +47,20 @@ const isSlotAvailable = async (
   shiftId,
   slotDate,
   excludeReservationId = null,
-  excludeAppointmentId = null
+  excludeAppointmentId = null,
+  slotStart = null,
+  serviceId = null
 ) => {
+  // Slot-level availability: tinh theo duration + buffer + overlap.
+  if (slotStart && serviceId) {
+    const slots = await generateAvailableSlots({
+      date: slotDate,
+      serviceId,
+      shiftId,
+    });
+    return Boolean(slots.find(s => s.slotStart === slotStart));
+  }
+
   await expireStaleReservations(shiftId, slotDate);
 
   if (await hasConfirmedAppointment(shiftId, slotDate, excludeAppointmentId)) {
@@ -69,7 +84,14 @@ const isSlotAvailable = async (
   return !pendingReservation;
 };
 
-const holdSeat = async ({ accountId, shiftId, dateInput }) => {
+const holdSeat = async ({
+  accountId,
+  shiftId,
+  dateInput,
+  serviceId = null,
+  slotStart = null,
+  slotEnd = null,
+}) => {
   const shift = await Shift.findById(shiftId);
   if (!shift) {
     throw new AppError("Shift not found", 404);
@@ -81,10 +103,61 @@ const holdSeat = async ({ accountId, shiftId, dateInput }) => {
   }
 
   const slotDate = normalizeSlotDate(dateInput);
-  const available = await isSlotAvailable(shiftId, slotDate);
-  if (!available) {
-    throw new AppError("This time slot is not available", 409);
+
+  // Slot-level hold (service + slotStart).
+  if (serviceId && slotStart) {
+    const slots = await generateAvailableSlots({
+      date: slotDate,
+      serviceId,
+      shiftId,
+    });
+    const slot = slots.find(s => s.slotStart === slotStart);
+    if (!slot) {
+      throw new AppError("This time slot is not available", 409);
+    }
+
+    const expiresAt = new Date(Date.now() + getHoldTtlSeconds() * 1000);
+    const reservation = await AppointmentReservation.create({
+      patient: patient._id,
+      shift: shiftId,
+      Date: slotDate,
+      slotStart: slot.slotStart,
+      slotEnd: slot.slotEnd,
+      service: serviceId,
+      durationMinutes: slot.durationMinutes,
+      status: "pending",
+      expiresAt,
+    });
+
+    const acquired = await acquireHold(
+      shiftId,
+      slotDate,
+      String(reservation._id),
+      slot.slotStart
+    );
+    if (!acquired) {
+      await AppointmentReservation.findByIdAndDelete(reservation._id);
+      throw new AppError("This time slot is being booked by someone else", 409);
+    }
+
+    await invalidateSlotCacheByDateKey({
+      dateKey: getSlotDateKey(slotDate),
+    });
+
+    return {
+      reservationId: reservation._id,
+      expiresAt: reservation.expiresAt,
+      holdSeconds: getHoldTtlSeconds(),
+      slotStart: reservation.slotStart,
+      slotEnd: reservation.slotEnd,
+      durationMinutes: reservation.durationMinutes,
+      serviceId: reservation.service,
+    };
   }
+
+  // Backward-compatible: hold entire shift (shift + day).
+  const available = await isSlotAvailable(shiftId, slotDate);
+  if (!available) throw new AppError("This time slot is not available", 409);
 
   const expiresAt = new Date(Date.now() + getHoldTtlSeconds() * 1000);
   const reservation = await AppointmentReservation.create({
@@ -100,6 +173,11 @@ const holdSeat = async ({ accountId, shiftId, dateInput }) => {
     await AppointmentReservation.findByIdAndDelete(reservation._id);
     throw new AppError("This time slot is being booked by someone else", 409);
   }
+
+  // Invalidate cache slot theo ngay (broad invalidation - dam bao dung).
+  await invalidateSlotCacheByDateKey({
+    dateKey: getSlotDateKey(slotDate)
+  });
 
   return {
     reservationId: reservation._id,
@@ -130,12 +208,21 @@ const getReservationForPayment = async (reservationId, accountId) => {
     throw new AppError("You are not allowed to pay for this reservation", 403);
   }
 
-  const holdOwner = await getHold(reservation.shift, reservation.Date);
+  const holdOwner = await getHold(
+    reservation.shift,
+    reservation.Date,
+    reservation.slotStart
+  );
   if (holdOwner !== String(reservation._id)) {
     throw new AppError("Hold seat has expired. Please book again", 409);
   }
 
-  await extendHold(reservation.shift, reservation.Date, String(reservation._id));
+  await extendHold(
+    reservation.shift,
+    reservation.Date,
+    String(reservation._id),
+    reservation.slotStart
+  );
   return reservation;
 };
 
@@ -151,7 +238,8 @@ const expireReservationIfNeeded = async reservationId => {
     await releaseHold(
       reservation.shift,
       reservation.Date,
-      String(reservation._id)
+      String(reservation._id),
+      reservation.slotStart
     );
   }
 
@@ -215,10 +303,19 @@ const confirmReservationFromPayment = async ({
       }
 
       const { start, end } = getDayRange(reservation.Date);
-      const existingAppointment = await Appointment.findOne({
+      const existingAppointmentQuery = {
         shift: reservation.shift,
         Date: { $gte: start, $lte: end }
-      }).session(session);
+      };
+      existingAppointmentQuery.status = { $nin: ["cancelled", "completed"] };
+
+      if (reservation.slotStart) {
+        existingAppointmentQuery.slotStart = reservation.slotStart;
+      }
+
+      const existingAppointment = await Appointment.findOne(
+        existingAppointmentQuery
+      ).session(session);
 
       if (existingAppointment) {
         throw new AppError("This time slot is already booked", 409);
@@ -229,7 +326,11 @@ const confirmReservationFromPayment = async ({
           {
             patient: reservation.patient._id,
             shift: reservation.shift,
-            Date: reservation.Date
+            Date: reservation.Date,
+            slotStart: reservation.slotStart,
+            slotEnd: reservation.slotEnd,
+            service: reservation.service,
+            durationMinutes: reservation.durationMinutes,
           }
         ],
         { session }
@@ -255,7 +356,8 @@ const confirmReservationFromPayment = async ({
       await releaseHold(
         result.reservation.shift,
         result.reservation.Date,
-        String(result.reservation._id)
+        String(result.reservation._id),
+        result.reservation.slotStart
       );
     }
 
@@ -263,6 +365,12 @@ const confirmReservationFromPayment = async ({
       await scheduleAppointmentReminders(result.appointment._id);
       const populated = await Appointment.findById(result.appointment._id);
       emitAppointmentUpdated(populated);
+
+      if (result?.reservation?.Date) {
+        await invalidateSlotCacheByDateKey({
+          dateKey: getSlotDateKey(result.reservation.Date),
+        });
+      }
     }
 
     return result;
@@ -279,17 +387,28 @@ const confirmReservationFromPayment = async ({
 
 const expireReservationsForHoldKey = async holdKey => {
   const parts = holdKey.split(":");
+  // hold:appt:{shiftId}:{dateKey}
+  // hold:slot:{shiftId}:{dateKey}:{slotStart}
   if (parts.length < 4) return;
+
   const shiftId = parts[2];
-  const dateKey = parts.slice(3).join(":");
+  const isSlot = parts[1] === "slot";
+  const dateKey = parts[3];
+  const slotStart = isSlot ? parts[4] : null;
+
   const slotDate = new Date(dateKey + "T00:00:00.000Z");
   const { start, end } = getDayRange(slotDate);
+
+  const match = {
+    shift: shiftId,
+    Date: { $gte: start, $lte: end },
+    status: "pending"
+  };
+
+  if (slotStart) match.slotStart = slotStart;
+
   await AppointmentReservation.updateMany(
-    {
-      shift: shiftId,
-      Date: { $gte: start, $lte: end },
-      status: "pending"
-    },
+    match,
     { status: "expired" }
   );
 };

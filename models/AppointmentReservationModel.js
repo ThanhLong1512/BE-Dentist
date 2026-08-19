@@ -16,6 +16,23 @@ const appointmentReservationSchema = new mongoose.Schema(
       type: Date,
       required: [true, "Please provide examination date"]
     },
+    slotStart: {
+      type: String, // "HH:mm"
+      default: null
+    },
+    slotEnd: {
+      type: String, // "HH:mm"
+      default: null
+    },
+    service: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Service",
+      default: null
+    },
+    durationMinutes: {
+      type: Number,
+      default: null
+    },
     status: {
       type: String,
       enum: ["pending", "confirmed", "expired", "cancelled"],
@@ -43,7 +60,8 @@ const appointmentReservationSchema = new mongoose.Schema(
   }
 );
 
-appointmentReservationSchema.index({ shift: 1, Date: 1, status: 1 });
+// Luc nay pending/confirmed cua cung slotStart trong mot shift/ngay la key de invalidate.
+appointmentReservationSchema.index({ shift: 1, Date: 1, slotStart: 1, status: 1 });
 appointmentReservationSchema.index({ expiresAt: 1, status: 1 });
 
 module.exports = mongoose.model(

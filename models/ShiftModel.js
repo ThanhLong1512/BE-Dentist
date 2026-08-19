@@ -35,6 +35,26 @@ const shiftSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   }
+  ,
+  // Cac khoang nghi (VD nghi trua) de tru khoi khoang lam viec khi sinh slot.
+  breaks: [
+    {
+      startTime: {
+        type: String,
+        // "HH:mm"
+      },
+      endTime: {
+        type: String,
+        // "HH:mm"
+      }
+    }
+  ],
+  // Buoc chia luoi slot de hien thi (VD 15 phut / 10 phut)
+  slotIntervalMinutes: {
+    type: Number,
+    default: 15,
+    min: 5
+  }
 });
 shiftSchema.pre(/^find/, filterBookedShift);
 shiftSchema.pre(/^find/, populateEmployeeAndService);

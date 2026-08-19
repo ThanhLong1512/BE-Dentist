@@ -28,7 +28,7 @@ const initHoldSeatExpiryListener = async () => {
     }
 
     await subscriber.pSubscribe("__keyevent@*__:expired", async message => {
-      if (!message.startsWith("hold:appt:")) {
+      if (!message.startsWith("hold:appt:") && !message.startsWith("hold:slot:")) {
         return;
       }
 

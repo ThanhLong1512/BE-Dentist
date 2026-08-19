@@ -16,9 +16,17 @@ const {
 } = require("../services/appointmentStatusService");
 const { cancelAppointmentReminders, scheduleAppointmentReminders } = require("../services/appointmentNotificationService");
 const { emitAppointmentUpdated } = require("../providers/socketProvider");
+const { invalidateSlotCacheByDateKey } = require("../services/slotCacheService");
+const { getSlotDateKey } = require("../utils/slotDate");
 
 exports.holdAppointment = catchAsync(async (req, res) => {
-  const { shift, Date: appointmentDate } = req.body;
+  const {
+    shift,
+    Date: appointmentDate,
+    serviceId,
+    slotStart,
+    slotEnd,
+  } = req.body;
 
   if (!shift || !appointmentDate) {
     throw new AppError("Please provide shift and Date", 400);
@@ -27,7 +35,10 @@ exports.holdAppointment = catchAsync(async (req, res) => {
   const result = await holdSeat({
     accountId: req.user.id,
     shiftId: shift,
-    dateInput: appointmentDate
+    dateInput: appointmentDate,
+    serviceId: serviceId || null,
+    slotStart: slotStart || null,
+    slotEnd: slotEnd || null,
   });
 
   res.status(StatusCodes.CREATED).json({
@@ -185,6 +196,12 @@ exports.deleteAppointment = catchAsync(async (req, res, next) => {
     await reservation.save();
   }
 
+  if (appointment.Date) {
+    await invalidateSlotCacheByDateKey({
+      dateKey: getSlotDateKey(appointment.Date)
+    });
+  }
+
   res.status(204).json({
     status: "success",
     data: null
@@ -214,8 +231,15 @@ exports.cancelReservation = catchAsync(async (req, res) => {
   await releaseHold(
     reservation.shift,
     reservation.Date,
-    String(reservation._id)
+    String(reservation._id),
+    reservation.slotStart
   );
+
+  if (reservation.Date) {
+    await invalidateSlotCacheByDateKey({
+      dateKey: getSlotDateKey(reservation.Date)
+    });
+  }
 
   res.status(StatusCodes.OK).json({
     status: "success",

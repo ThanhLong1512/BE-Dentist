@@ -16,6 +16,19 @@ const serviceSchema = mongoose.Schema(
       type: Number,
       required: [true, "Please provide a valid price"]
     },
+    // Thoi luong dich vu (phut) de tinh toan cac slot thoi gian.
+    durationMinutes: {
+      type: Number,
+      required: true,
+      default: 30,
+      min: [15, "durationMinutes must be >= 15"]
+    },
+    // Thoi gian don thiet bi/bu tru giua 2 ca dat lien tiep.
+    // Mac dinh 10 phut theo yeu cau nghiep vu.
+    bufferMinutes: {
+      type: Number,
+      default: 10
+    },
     photoService: {
       public_id: {
         type: String,

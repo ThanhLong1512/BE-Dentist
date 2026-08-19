@@ -4,8 +4,11 @@ const { getSlotDateKey } = require("./slotDate");
 const getHoldTtlSeconds = () =>
   parseInt(process.env.HOLD_SEAT_TTL_SECONDS, 10) || 300;
 
-const getHoldKey = (shiftId, dateInput) =>
-  `hold:appt:${shiftId}:${getSlotDateKey(dateInput)}`;
+const getHoldKey = (shiftId, dateInput, slotStart) => {
+  const dateKey = getSlotDateKey(dateInput);
+  if (slotStart) return `hold:slot:${shiftId}:${dateKey}:${slotStart}`;
+  return `hold:appt:${shiftId}:${dateKey}`;
+};
 
 const RELEASE_HOLD_SCRIPT = `
   if redis.call("get", KEYS[1]) == ARGV[1] then
@@ -15,10 +18,10 @@ const RELEASE_HOLD_SCRIPT = `
   end
 `;
 
-const acquireHold = async (shiftId, dateInput, reservationId) => {
+const acquireHold = async (shiftId, dateInput, reservationId, slotStart) => {
   return safeRedisOperation(async () => {
     const redis = getRedis().instanceConnect;
-    const key = getHoldKey(shiftId, dateInput);
+    const key = getHoldKey(shiftId, dateInput, slotStart);
     const result = await redis.set(key, reservationId, {
       NX: true,
       EX: getHoldTtlSeconds()
@@ -27,10 +30,10 @@ const acquireHold = async (shiftId, dateInput, reservationId) => {
   }, false);
 };
 
-const releaseHold = async (shiftId, dateInput, reservationId) => {
+const releaseHold = async (shiftId, dateInput, reservationId, slotStart) => {
   return safeRedisOperation(async () => {
     const redis = getRedis().instanceConnect;
-    const key = getHoldKey(shiftId, dateInput);
+    const key = getHoldKey(shiftId, dateInput, slotStart);
     return redis.eval(RELEASE_HOLD_SCRIPT, {
       keys: [key],
       arguments: [reservationId]
@@ -38,18 +41,18 @@ const releaseHold = async (shiftId, dateInput, reservationId) => {
   }, 0);
 };
 
-const getHold = async (shiftId, dateInput) => {
+const getHold = async (shiftId, dateInput, slotStart) => {
   return safeRedisOperation(async () => {
     const redis = getRedis().instanceConnect;
-    const key = getHoldKey(shiftId, dateInput);
+    const key = getHoldKey(shiftId, dateInput, slotStart);
     return redis.get(key);
   }, null);
 };
 
-const extendHold = async (shiftId, dateInput, reservationId) => {
+const extendHold = async (shiftId, dateInput, reservationId, slotStart) => {
   return safeRedisOperation(async () => {
     const redis = getRedis().instanceConnect;
-    const key = getHoldKey(shiftId, dateInput);
+    const key = getHoldKey(shiftId, dateInput, slotStart);
     const current = await redis.get(key);
     if (current !== reservationId) return false;
     await redis.expire(key, getHoldTtlSeconds());
