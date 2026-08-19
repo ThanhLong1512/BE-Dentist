@@ -19,16 +19,10 @@ exports.getOrderByUser = CatchAsync(async (req, res) => {
   }
 
   const orders = await Order.find({ account: userID }).populate("service");
+  const list = orders || [];
 
-  if (!orders || orders.length === 0) {
-    return res.status(StatusCodes.NOT_FOUND).json({
-      message: "No orders found for this account"
-    });
-  }
-
-  const codOrders = orders.filter(order => order.paymentMethod === "COD");
-
-  const paidOrders = orders.filter(order => order.paymentMethod !== "COD");
+  const codOrders = list.filter(order => order.paymentMethod === "COD");
+  const paidOrders = list.filter(order => order.paymentMethod !== "COD");
 
   return res.status(StatusCodes.OK).json({
     status: "Successful",

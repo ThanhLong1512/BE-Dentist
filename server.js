@@ -5,6 +5,8 @@ const mongoose = require("mongoose");
 const corsOptions = require("./config/corsOption");
 const { initRedis } = require("./providers/RedisProvider");
 const { initHoldSeatExpiryListener } = require("./providers/holdSeatExpiryListener");
+const { initSocketServer } = require("./providers/socketProvider");
+const { startNotificationWorker } = require("./workers/notificationWorker");
 
 const app = require("./index");
 
@@ -17,6 +19,8 @@ const START_SERVER = async () => {
   try {
     await initRedis();
     await initHoldSeatExpiryListener();
+    initSocketServer(parseInt(process.env.SOCKET_PORT, 10) || 8090);
+    await startNotificationWorker();
 
     const DB_URI = process.env.DATABASE.replace(
       "<PASSWORD>",

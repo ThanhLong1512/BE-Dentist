@@ -18,6 +18,30 @@ const appointmentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Shift",
       required: [true, "Please provide a valid shift"]
+    },
+    status: {
+      type: String,
+      enum: [
+        "scheduled",
+        "checked_in",
+        "in_progress",
+        "completed",
+        "cancelled",
+        "rescheduled"
+      ],
+      default: "scheduled"
+    },
+    statusHistory: [
+      {
+        status: String,
+        changedAt: { type: Date, default: Date.now },
+        changedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Account" },
+        note: String
+      }
+    ],
+    remindersSent: {
+      "1day": Date,
+      "2hours": Date
     }
   },
   {

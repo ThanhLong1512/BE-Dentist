@@ -10,6 +10,12 @@ const {
 } = require("../services/reservationService");
 const { releaseHold } = require("../utils/holdSeat");
 const AppointmentReservation = require("../models/AppointmentReservationModel");
+const {
+  updateAppointmentStatus,
+  rescheduleAppointment
+} = require("../services/appointmentStatusService");
+const { cancelAppointmentReminders, scheduleAppointmentReminders } = require("../services/appointmentNotificationService");
+const { emitAppointmentUpdated } = require("../providers/socketProvider");
 
 exports.holdAppointment = catchAsync(async (req, res) => {
   const { shift, Date: appointmentDate } = req.body;
@@ -52,10 +58,14 @@ exports.createAppointment = catchAsync(async (req, res) => {
     Date: appointmentDate
   });
 
+  await scheduleAppointmentReminders(appointment._id);
+  const populated = await Appointment.findById(appointment._id);
+  emitAppointmentUpdated(populated);
+
   res.status(201).json({
     status: "success",
     message: "Book appointment successfully",
-    data: { appointment }
+    data: { appointment: populated }
   });
 });
 
@@ -121,12 +131,50 @@ exports.getAppointmentByPeriod = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.updateAppointmentStatus = catchAsync(async (req, res) => {
+  const { status } = req.body;
+  if (!status) {
+    throw new AppError("Please provide status", 400);
+  }
+
+  const { appointment } = await updateAppointmentStatus(
+    req.params.id,
+    status,
+    req.user
+  );
+
+  res.status(StatusCodes.OK).json({
+    status: "success",
+    data: { appointment }
+  });
+});
+
+exports.rescheduleAppointment = catchAsync(async (req, res) => {
+  const { Date: appointmentDate, shift, reason } = req.body;
+  if (!appointmentDate && !shift) {
+    throw new AppError("Please provide Date and/or shift to reschedule", 400);
+  }
+
+  const appointment = await rescheduleAppointment(
+    req.params.id,
+    { Date: appointmentDate, shift, reason },
+    req.user
+  );
+
+  res.status(StatusCodes.OK).json({
+    status: "success",
+    message: "Appointment rescheduled. Patient will be notified.",
+    data: { appointment }
+  });
+});
+
 exports.deleteAppointment = catchAsync(async (req, res, next) => {
   const appointment = await Appointment.findById(req.params.id);
   if (!appointment) {
     return next(new AppError("No document found with that ID", 404));
   }
 
+  await cancelAppointmentReminders(req.params.id);
   await Appointment.findByIdAndDelete(req.params.id);
 
   const reservation = await AppointmentReservation.findOne({

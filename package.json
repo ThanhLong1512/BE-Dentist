@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon server.js",
-    "dev": "nodemon socket.js",
+    "dev": "nodemon server.js",
     "import": "node data/import-dev-data.js --import",
     "export": "node data/import-dev-data.js --delete"
   },
@@ -20,6 +20,7 @@
     "axios": "^1.9.0",
     "bcryptjs": "^3.0.2",
     "be-dentist": "file:",
+    "bullmq": "^6.1.2",
     "cloudinary": "^2.6.0",
     "compression": "^1.8.0",
     "connect-timeout": "^1.9.0",
@@ -35,6 +36,7 @@
     "helmet": "^8.0.0",
     "hpp": "^0.2.3",
     "http-status-codes": "^2.3.0",
+    "ioredis": "^6.0.0",
     "jsonwebtoken": "^9.0.2",
     "moment": "^2.30.1",
     "mongoose": "^8.10.1",

@@ -35,6 +35,16 @@ Router.route("/")
     appointmentController.createAppointment
   );
 
+Router.route("/:id/status").patch(
+  rbacMiddleware.isPermission(["admin"]),
+  appointmentController.updateAppointmentStatus
+);
+
+Router.route("/:id/reschedule").patch(
+  rbacMiddleware.isPermission(["admin"]),
+  appointmentController.rescheduleAppointment
+);
+
 Router.route("/:id")
   .get(
     rbacMiddleware.isPermission(["admin", "user"]),

@@ -14,6 +14,8 @@ const {
   releaseConfirmLock
 } = require("../utils/holdSeat");
 const { normalizeSlotDate, getDayRange } = require("../utils/slotDate");
+const { scheduleAppointmentReminders } = require("./appointmentNotificationService");
+const { emitAppointmentUpdated } = require("../providers/socketProvider");
 
 const expireStaleReservations = async (shiftId, slotDate) => {
   const { start, end } = getDayRange(slotDate);
@@ -28,19 +30,25 @@ const expireStaleReservations = async (shiftId, slotDate) => {
   );
 };
 
-const hasConfirmedAppointment = async (shiftId, slotDate) => {
+const hasConfirmedAppointment = async (shiftId, slotDate, excludeAppointmentId = null) => {
   const { start, end } = getDayRange(slotDate);
   const existing = await Appointment.findOne({
     shift: shiftId,
-    Date: { $gte: start, $lte: end }
+    Date: { $gte: start, $lte: end },
+    ...(excludeAppointmentId ? { _id: { $ne: excludeAppointmentId } } : {})
   });
   return Boolean(existing);
 };
 
-const isSlotAvailable = async (shiftId, slotDate, excludeReservationId = null) => {
+const isSlotAvailable = async (
+  shiftId,
+  slotDate,
+  excludeReservationId = null,
+  excludeAppointmentId = null
+) => {
   await expireStaleReservations(shiftId, slotDate);
 
-  if (await hasConfirmedAppointment(shiftId, slotDate)) {
+  if (await hasConfirmedAppointment(shiftId, slotDate, excludeAppointmentId)) {
     return false;
   }
 
@@ -249,6 +257,12 @@ const confirmReservationFromPayment = async ({
         result.reservation.Date,
         String(result.reservation._id)
       );
+    }
+
+    if (result?.appointment && !result.alreadyConfirmed) {
+      await scheduleAppointmentReminders(result.appointment._id);
+      const populated = await Appointment.findById(result.appointment._id);
+      emitAppointmentUpdated(populated);
     }
 
     return result;
