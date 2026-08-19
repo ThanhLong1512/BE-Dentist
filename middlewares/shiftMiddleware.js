@@ -16,7 +16,6 @@ exports.getShiftsByToday = function(req, res, next) {
 };
 
 exports.filterBookedShift = function(next) {
-  this.find({ isBooked: { $ne: true } });
   next();
 };
 

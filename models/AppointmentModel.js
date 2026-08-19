@@ -29,6 +29,7 @@ const appointmentSchema = new mongoose.Schema(
     }
   }
 );
+appointmentSchema.index({ shift: 1, Date: 1 }, { unique: true });
 appointmentSchema.pre(/^find/, populatePatientAndShift);
 const Appointment = mongoose.model("Appointment", appointmentSchema);
 module.exports = Appointment;

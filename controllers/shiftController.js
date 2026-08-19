@@ -1,22 +1,44 @@
 const Shift = require("./../models/ShiftModel");
 const factory = require("./handlerFactory");
-const Employee = require("../models/EmployeeModel");
+const catchAsync = require("../utils/catchAsync");
+const { isSlotAvailable } = require("../services/reservationService");
+const { normalizeSlotDate } = require("../utils/slotDate");
 
-exports.getShiftsByDayOfWeek = async (req, res) => {
-  try {
-    const { dayOfWeek } = req.params;
-    const shifts = await Shift.find({ DayOfWeek: dayOfWeek });
-    res.status(200).json({
+exports.getShiftsByDayOfWeek = catchAsync(async (req, res) => {
+  const { dayOfWeek } = req.params;
+  const { date } = req.query;
+
+  const shifts = await Shift.find({ DayOfWeek: dayOfWeek });
+
+  if (!date) {
+    return res.status(200).json({
       status: "success",
       data: shifts
     });
-  } catch (error) {
-    res.status(500).json({
-      status: "error",
-      message: error.message
-    });
   }
-};
+
+  const slotDate = normalizeSlotDate(date);
+  const availabilityChecks = await Promise.all(
+    shifts.map(async shift => ({
+      shift,
+      available: await isSlotAvailable(shift._id, slotDate)
+    }))
+  );
+
+  const availableShifts = availabilityChecks
+    .filter(item => item.available)
+    .map(item => item.shift);
+
+  res.status(200).json({
+    status: "success",
+    data: availableShifts,
+    meta: {
+      date: slotDate,
+      total: shifts.length,
+      availableCount: availableShifts.length
+    }
+  });
+});
 
 exports.getAllShift = factory.getAll(Shift);
 exports.getShift = factory.getOne(Shift);

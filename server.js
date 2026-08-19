@@ -1,28 +1,22 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const cookieParser = require("cookie-parser");
-const cors = require("cors");
 const dotenv = require("dotenv");
+dotenv.config({ path: "./config.env" });
+
+const mongoose = require("mongoose");
 const corsOptions = require("./config/corsOption");
 const { initRedis } = require("./providers/RedisProvider");
+const { initHoldSeatExpiryListener } = require("./providers/holdSeatExpiryListener");
 
 const app = require("./index");
-dotenv.config({ path: "./config.env" });
-// Missing app initialization
 
-// // No-cache middleware
 app.use((req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
 });
 
-// Route handlers (these were imported but not used)
-
-// Connect to MongoDB and start server
 const START_SERVER = async () => {
   try {
-    // Connect to Redis before start the server
     await initRedis();
+    await initHoldSeatExpiryListener();
 
     const DB_URI = process.env.DATABASE.replace(
       "<PASSWORD>",
@@ -32,7 +26,6 @@ const START_SERVER = async () => {
     await mongoose.connect(DB_URI);
     console.log("✅ Database connected successfully");
 
-    // Set host and port with fallback values
     const host = process.env.LOCAL_DEV_APP_HOST || "0.0.0.0";
     const port = process.env.LOCAL_DEV_APP_PORT || 3000;
 
@@ -42,7 +35,6 @@ const START_SERVER = async () => {
         resolve(server);
       });
 
-      // Handle unhandled rejections
       process.on("unhandledRejection", err => {
         console.log("UNHANDLED REJECTION! 💥 Shutting down...");
         console.log(err.name, err.message);
@@ -51,7 +43,6 @@ const START_SERVER = async () => {
         });
       });
 
-      // Handle SIGTERM
       process.on("SIGTERM", () => {
         console.log("👋 SIGTERM RECEIVED. Shutting down gracefully");
         server.close(() => {
