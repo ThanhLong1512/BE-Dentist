@@ -1,5 +1,11 @@
 const Patient = require("./../models/PatientModel");
 const factory = require("./handlerFactory");
+const catchAsync = require("../utils/catchAsync");
+const AppError = require("../utils/appError");
+const {
+  indexPatient,
+  deletePatient,
+} = require("../search/indexer");
 
 exports.setAccountId = (req, res, next) => {
   if (!req.body.account) req.body.account = req.user.id;
@@ -8,9 +14,44 @@ exports.setAccountId = (req, res, next) => {
 
 exports.getAllPatients = factory.getAll(Patient);
 exports.getPatient = factory.getOne(Patient);
-exports.createPatient = factory.createOne(Patient);
-exports.updatePatient = factory.updateOne(Patient);
-exports.deletePatient = factory.deleteOne(Patient);
+exports.createPatient = catchAsync(async (req, res) => {
+  const doc = await Patient.create(req.body);
+  await indexPatient(doc._id);
+  res.status(201).json({
+    status: "success",
+    data: { data: doc },
+  });
+});
+
+exports.updatePatient = catchAsync(async (req, res) => {
+  const doc = await Patient.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true,
+  });
+  if (!doc) {
+    return res.status(404).json({
+      status: "fail",
+      message: "No document found with that ID",
+    });
+  }
+  await indexPatient(doc._id);
+  res.status(200).json({
+    status: "success",
+    data: { data: doc },
+  });
+});
+
+exports.deletePatient = catchAsync(async (req, res, next) => {
+  const doc = await Patient.findByIdAndDelete(req.params.id);
+  if (!doc) {
+    return next(new AppError("No document found with that ID", 404));
+  }
+  await deletePatient(doc._id);
+  res.status(204).json({
+    status: "success",
+    data: null,
+  });
+});
 exports.duplicatePatient = async (req, res) => {
   try {
     const { id } = req.params;
@@ -30,6 +71,8 @@ exports.duplicatePatient = async (req, res) => {
       phoneNumber: originalPatient.phoneNumber,
       address: originalPatient.address
     });
+
+    await indexPatient(duplicatedPatient._id);
 
     res.status(201).json({
       message: "success",

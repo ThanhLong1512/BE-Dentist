@@ -18,6 +18,7 @@ const { cancelAppointmentReminders, scheduleAppointmentReminders } = require("..
 const { emitAppointmentUpdated } = require("../providers/socketProvider");
 const { invalidateSlotCacheByDateKey } = require("../services/slotCacheService");
 const { getSlotDateKey } = require("../utils/slotDate");
+const { indexAppointment, deleteAppointment } = require("../search/indexer");
 
 exports.holdAppointment = catchAsync(async (req, res) => {
   const {
@@ -72,6 +73,8 @@ exports.createAppointment = catchAsync(async (req, res) => {
   await scheduleAppointmentReminders(appointment._id);
   const populated = await Appointment.findById(appointment._id);
   emitAppointmentUpdated(populated);
+
+  await indexAppointment(appointment._id);
 
   res.status(201).json({
     status: "success",
@@ -187,6 +190,8 @@ exports.deleteAppointment = catchAsync(async (req, res, next) => {
 
   await cancelAppointmentReminders(req.params.id);
   await Appointment.findByIdAndDelete(req.params.id);
+
+  await deleteAppointment(req.params.id);
 
   const reservation = await AppointmentReservation.findOne({
     appointment: req.params.id

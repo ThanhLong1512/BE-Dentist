@@ -18,6 +18,7 @@ const { scheduleAppointmentReminders } = require("./appointmentNotificationServi
 const { emitAppointmentUpdated } = require("../providers/socketProvider");
 const { invalidateSlotCacheByDateKey } = require("./slotCacheService");
 const { generateAvailableSlots } = require("./slotGenerationService");
+const { indexAppointment } = require("../search/indexer");
 
 const expireStaleReservations = async (shiftId, slotDate) => {
   const { start, end } = getDayRange(slotDate);
@@ -365,6 +366,9 @@ const confirmReservationFromPayment = async ({
       await scheduleAppointmentReminders(result.appointment._id);
       const populated = await Appointment.findById(result.appointment._id);
       emitAppointmentUpdated(populated);
+
+      // Update Elasticsearch index for appointment search.
+      await indexAppointment(result.appointment._id);
 
       if (result?.reservation?.Date) {
         await invalidateSlotCacheByDateKey({

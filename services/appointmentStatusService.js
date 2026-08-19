@@ -10,6 +10,7 @@ const {
   emitAppointmentUpdated,
   emitNotification
 } = require("../providers/socketProvider");
+const { indexAppointment } = require("../search/indexer");
 const { invalidateSlotCacheByDateKey } = require("./slotCacheService");
 const { getSlotDateKey } = require("../utils/slotDate");
 
@@ -61,6 +62,10 @@ const updateAppointmentStatus = async (appointmentId, status, actorUser) => {
   }
 
   await appointment.save();
+
+  // Update Elasticsearch index for fuzzy/full-text searching.
+  await indexAppointment(appointment._id);
+
   const populated = await populateAppointment(Appointment.findById(appointmentId));
 
   emitAppointmentUpdated(populated);
@@ -110,6 +115,9 @@ const rescheduleAppointment = async (appointmentId, payload, actorUser) => {
   });
 
   await appointment.save();
+
+  await indexAppointment(appointment._id);
+
   await cancelAppointmentReminders(appointmentId);
   await scheduleAppointmentReminders(appointmentId);
   await queueScheduleChangeNotification(
