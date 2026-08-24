@@ -1,5 +1,6 @@
 const redis = require("redis");
 const AppError = require("../utils/appError");
+const logger = require("../utils/logger");
 
 let client = null;
 let isConnected = false;
@@ -25,7 +26,7 @@ let connectionTimeout;
 
 const handleTimeoutConnect = () => {
   connectionTimeout = setTimeout(() => {
-    console.error("❌ Redis connection timeout");
+    logger.error("Redis connection timeout");
     throw new AppError(
       REDIS_CONNECT_MESSAGE.message.vn,
       REDIS_CONNECT_MESSAGE.code
@@ -35,29 +36,29 @@ const handleTimeoutConnect = () => {
 
 const handleEventConnection = connectionRedis => {
   connectionRedis.on(statusConnectRedis.CONNECTED, () => {
-    console.log("🟢 Redis Client - Connection status: connecting");
+    logger.info("Redis client connecting");
   });
 
   connectionRedis.on(statusConnectRedis.READING, () => {
-    console.log("✅ Redis Client - Connection status: ready");
+    logger.info("Redis client ready");
     isConnected = true;
     clearTimeout(connectionTimeout);
   });
 
   connectionRedis.on(statusConnectRedis.ENDED, () => {
-    console.log("🔴 Redis Client - Connection status: ended");
+    logger.warn("Redis client connection ended");
     isConnected = false;
     handleTimeoutConnect();
   });
 
   connectionRedis.on(statusConnectRedis.RECONNECTING, () => {
-    console.log("🟡 Redis Client - Connection status: reconnecting");
+    logger.warn("Redis client reconnecting");
     isConnected = false;
     clearTimeout(connectionTimeout);
   });
 
   connectionRedis.on("error", error => {
-    console.error(`❌ Redis Client - Connection error:`, error.message);
+    logger.error("Redis client connection error", { message: error.message });
     isConnected = false;
     handleTimeoutConnect();
   });
@@ -65,7 +66,7 @@ const handleEventConnection = connectionRedis => {
 
 const initRedis = async () => {
   try {
-    console.log("🚀 Initializing Redis connection...");
+    logger.info("Initializing Redis connection");
 
     const instanceRedis = redis.createClient({
       socket: {
@@ -83,14 +84,17 @@ const initRedis = async () => {
 
     client = instanceRedis;
 
-    console.log("✅ Redis initialized successfully");
+    logger.info("Redis initialized successfully");
 
     const pingResult = await instanceRedis.ping();
-    console.log("🏓 Redis ping result:", pingResult);
+    logger.debug("Redis ping result", { pingResult });
 
     return instanceRedis;
   } catch (error) {
-    console.error("❌ Redis initialization failed:", error);
+    logger.error("Redis initialization failed", {
+      message: error.message,
+      stack: error.stack
+    });
     isConnected = false;
     throw error;
   }
@@ -118,13 +122,13 @@ const isRedisReady = () => {
 const safeRedisOperation = async (operation, fallback = null) => {
   try {
     if (!isRedisReady()) {
-      console.warn("⚠️ Redis not ready, skipping cache operation");
+      logger.warn("Redis not ready, skipping cache operation");
       return fallback;
     }
 
     return await operation();
   } catch (error) {
-    console.error("❌ Redis operation failed:", error.message);
+    logger.error("Redis operation failed", { message: error.message });
     return fallback;
   }
 };
@@ -135,7 +139,7 @@ const closeRedis = async () => {
       await client.quit();
     }
   } catch (error) {
-    console.error("❌ Error closing Redis connection:", error);
+    logger.error("Error closing Redis connection", { message: error.message });
   } finally {
     client = null;
     isConnected = false;
@@ -148,7 +152,7 @@ const reconnectRedis = async () => {
       await client.connect();
     }
   } catch (error) {
-    console.error("❌ Manual reconnect failed:", error);
+    logger.error("Manual Redis reconnect failed", { message: error.message });
   }
 };
 

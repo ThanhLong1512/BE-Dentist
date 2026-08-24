@@ -1,8 +1,11 @@
 const dotenv = require("dotenv");
 dotenv.config({ path: "./config.env" });
 
+const logger = require("./utils/logger");
+const { initSentry, captureException } = require("./providers/sentryProvider");
+initSentry();
+
 const mongoose = require("mongoose");
-const corsOptions = require("./config/corsOption");
 const { initRedis } = require("./providers/RedisProvider");
 const { initHoldSeatExpiryListener } = require("./providers/holdSeatExpiryListener");
 const { initSocketServer } = require("./providers/socketProvider");
@@ -28,47 +31,65 @@ const START_SERVER = async () => {
     );
 
     await mongoose.connect(DB_URI);
-    console.log("✅ Database connected successfully");
+    logger.info("Database connected successfully");
 
     const host = process.env.LOCAL_DEV_APP_HOST || "0.0.0.0";
     const port = process.env.LOCAL_DEV_APP_PORT || 3000;
 
     return new Promise((resolve, reject) => {
       const server = app.listen(port, host, () => {
-        console.log(`🚀 Server running at http://${host}:${port}`);
+        logger.info(`Server running at http://${host}:${port}`);
         resolve(server);
       });
 
       process.on("unhandledRejection", err => {
-        console.log("UNHANDLED REJECTION! 💥 Shutting down...");
-        console.log(err.name, err.message);
+        logger.error("UNHANDLED REJECTION — shutting down", {
+          name: err.name,
+          message: err.message,
+          stack: err.stack
+        });
+        captureException(err);
         server.close(() => {
           process.exit(1);
         });
       });
 
+      process.on("uncaughtException", err => {
+        logger.error("UNCAUGHT EXCEPTION — shutting down", {
+          name: err.name,
+          message: err.message,
+          stack: err.stack
+        });
+        captureException(err);
+        process.exit(1);
+      });
+
       process.on("SIGTERM", () => {
-        console.log("👋 SIGTERM RECEIVED. Shutting down gracefully");
+        logger.info("SIGTERM received — shutting down gracefully");
         server.close(() => {
-          console.log("💥 Process terminated!");
+          logger.info("Process terminated");
         });
       });
 
       server.on("error", reject);
     });
   } catch (error) {
-    console.error("Database connection failed", error);
+    logger.error("Server bootstrap failed", {
+      message: error.message,
+      stack: error.stack
+    });
     throw error;
   }
 };
 
 (async () => {
-  console.log("Starting Server...");
+  logger.info("Starting server...");
   try {
     await START_SERVER();
-    console.log("Server started successfully");
+    logger.info("Server started successfully");
   } catch (error) {
-    console.error(error);
+    logger.error(error.message, { stack: error.stack });
+    captureException(error);
     process.exit(1);
   }
 })();

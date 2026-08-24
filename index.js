@@ -10,6 +10,8 @@ const hpp = require("hpp");
 const compression = require("compression");
 
 const AppError = require("./utils/appError");
+const logger = require("./utils/logger");
+const requestLogger = require("./middlewares/requestLogger");
 
 const globalErrorHandler = require("./controllers/errorController");
 
@@ -27,10 +29,16 @@ const conservationRoutes = require("./routes/conservationRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const searchRoutes = require("./routes/searchRoutes");
 const availabilityRoutes = require("./routes/availabilityRoutes");
+const healthRoutes = require("./routes/healthRoutes");
+
+const swaggerUi = require("swagger-ui-express");
+const { specs } = require("./docs/swagger");
 
 const corsOption = require("./config/corsOption");
 
 const app = express();
+
+app.use(requestLogger);
 
 // Set timeout to 10 seconds
 // app.use(timeout("10s"));
@@ -88,7 +96,7 @@ app.use(
   })
 );
 app.get("/", (req, res) => {
-  console.log("✅ Deployment Successful - Health check accessed");
+  logger.info("Root health probe accessed");
   res.status(200).json({
     status: "success",
     message: "Deployment Successful",
@@ -96,6 +104,11 @@ app.get("/", (req, res) => {
     environment: process.env.NODE_ENV || "development"
   });
 });
+
+app.use("/health", healthRoutes);
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+
 // Compress responses
 app.use(compression());
 
