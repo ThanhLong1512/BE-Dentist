@@ -103,7 +103,7 @@ const logout = async (req, res) => {
 
 const refreshToken = async (req, res) => {
   try {
-    const refreshTokenFromCookie = req.cookie?.refreshToken;
+    const refreshTokenFromCookie = req.cookies?.refreshToken;
     // Verify Refresh Token
     const refreshTokenDecoded = await JwtProvider.verifyToken(
       refreshTokenFromCookie,
@@ -125,8 +125,8 @@ const refreshToken = async (req, res) => {
     res.cookie("accessToken", accessTokenNew, {
       maxAge: ms("30 days"),
       httpOnly: true,
-      secure: true,
-      sameSite: "none"
+      secure: process.env.COOKIE_SECURE === "true",
+      sameSite: process.env.COOKIE_SECURE === "true" ? "none" : "lax"
     });
     res.status(StatusCodes.OK).json({ accessTokenNew });
   } catch (error) {
@@ -196,18 +196,15 @@ const createSendToken = async (payLoad, req, res) => {
     process.env.REFRESH_TOKEN_SIGNATURE,
     "30 days"
   );
-  res.cookie("accessToken", accessToken, {
+  const useSecureCookie = process.env.COOKIE_SECURE === "true";
+  const cookieOptions = {
     maxAge: ms("30 days"),
     httpOnly: true,
-    secure: true,
-    sameSite: "none"
-  });
-  res.cookie("refreshToken", refreshToken, {
-    maxAge: ms("30 days"),
-    httpOnly: true,
-    secure: true,
-    sameSite: "none"
-  });
+    secure: useSecureCookie,
+    sameSite: useSecureCookie ? "none" : "lax"
+  };
+  res.cookie("accessToken", accessToken, cookieOptions);
+  res.cookie("refreshToken", refreshToken, cookieOptions);
   res.clearCookie("__sbref");
   res.status(StatusCodes.OK).json({ ...payLoad, accessToken, refreshToken });
 };
@@ -343,17 +340,28 @@ const verify2FA = CatchAsync(async (req, res) => {
   });
 });
 const loginGoogle = CatchAsync(async (req, res) => {
-  const { token } = req.body;
+  const token = req.body.token || req.body.credential;
+  if (!token) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Google credential is required"
+    });
+  }
+
   const InfoGoogle = await GoogleProvider.verify(token);
   const { name, email: googleEmail, sub } = InfoGoogle;
-  let normalizedEmail = "";
-  if (googleEmail) {
-    normalizedEmail = googleEmail.replace(/\s/g, "").toLowerCase();
-  }
-  const user = await Account.findOne({ googleID: sub });
-  let newUser, payLoad;
+  const normalizedEmail = (googleEmail || "").replace(/\s/g, "").toLowerCase();
 
-  if (!user) {
+  if (!normalizedEmail) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      message: "Google account does not provide an email"
+    });
+  }
+
+  let newUser = await Account.findOne({
+    $or: [{ googleID: sub }, { email: normalizedEmail }]
+  });
+
+  if (!newUser) {
     newUser = await Account.create({
       name,
       email: normalizedEmail,
@@ -361,19 +369,22 @@ const loginGoogle = CatchAsync(async (req, res) => {
       password: normalizedEmail + process.env.GOOGLE_CLIENT_ID,
       passwordConfirm: normalizedEmail + process.env.GOOGLE_CLIENT_ID
     });
-    const newAccountSession = await AccountSession.create({
-      user_id: newUser._id,
-      device_id: req.headers["user-agent"],
-      is_2fa_verified: false,
-      last_login: new Date().valueOf()
-    });
-  } else {
-    newUser = user;
+  } else if (!newUser.googleID) {
+    newUser.googleID = sub;
+    await newUser.save({ validateBeforeSave: false });
   }
 
-  payLoad = {
+  const newAccountSession = await AccountSession.create({
+    user_id: newUser._id,
+    device_id: req.headers["user-agent"],
+    is_2fa_verified: false,
+    last_login: new Date().valueOf()
+  });
+
+  const payLoad = {
     id: newUser._id,
     email: newUser.email,
+    name: newUser.name,
     role: newUser.role,
     require_2FA: newUser.require_2FA,
     is_2fa_verified: newAccountSession.is_2fa_verified,

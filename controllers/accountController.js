@@ -26,10 +26,7 @@ exports.getAccountByUser = CatchAsync(async (req, res) => {
       .status(StatusCodes.NOT_FOUND)
       .json({ message: "No one order for this account" });
   }
-  // Mã hóa dữ liệu nhạy cảm bằng aws-kms
-  if (account) {
-    await account.setPersonalInfo(userID);
-  }
+
   return res.status(StatusCodes.OK).json({
     status: "Successful",
     data: {

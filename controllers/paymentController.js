@@ -1,6 +1,7 @@
 const { StatusCodes } = require("http-status-codes");
 const CatchAsync = require("../utils/catchAsync");
 const Order = require("../models/OrderModel");
+const AppError = require("../utils/appError");
 const {
   VNPay,
   ignoreLogger,
@@ -18,10 +19,73 @@ const {
   zaloPayConfig,
   vnPayConfig
 } = require("../config/paymentConfig");
+const {
+  getReservationForPayment,
+  confirmReservationFromPayment
+} = require("../services/reservationService");
+
+const finalizeSuccessfulPayment = async ({
+  reservationId,
+  paymentMethod,
+  paymentRef,
+  totalPrice,
+  accountId,
+  serviceIds
+}) => {
+  const confirmResult = await confirmReservationFromPayment({
+    reservationId,
+    paymentMethod,
+    paymentRef,
+    totalPrice,
+    accountId,
+    serviceIds
+  });
+
+  if (!confirmResult.alreadyConfirmed) {
+    await Order.create({
+      account: accountId,
+      service: serviceIds,
+      status: "Successful",
+      totalPrice,
+      paymentMethod
+    });
+  }
+
+  return confirmResult;
+};
+
+const requireReservation = async (req) => {
+  const { reservationId, totalPrice, service } = req.body;
+
+  if (!reservationId) {
+    throw new AppError("reservationId is required to complete appointment booking", 400);
+  }
+
+  const reservation = await getReservationForPayment(reservationId, req.user.id);
+  return { reservation, totalPrice, serviceIds: service };
+};
 
 const paymentWithCOD = CatchAsync(async (req, res) => {
-  const totalPrice = req.body.totalPrice;
-  const service = req.body.service;
+  const { reservationId, totalPrice, service } = req.body;
+
+  if (reservationId) {
+    const confirmResult = await finalizeSuccessfulPayment({
+      reservationId,
+      paymentMethod: "COD",
+      paymentRef: `COD-${Date.now()}`,
+      totalPrice,
+      accountId: req.user.id,
+      serviceIds: service
+    });
+
+    return res.status(StatusCodes.OK).json({
+      status: "Successfully Order",
+      data: {
+        appointmentId: confirmResult.appointment?._id || confirmResult.appointment
+      }
+    });
+  }
+
   await Order.create({
     account: req.user.id,
     service: service,
@@ -32,9 +96,9 @@ const paymentWithCOD = CatchAsync(async (req, res) => {
     status: "Successfully Order"
   });
 });
+
 const paymentWithMoMo = CatchAsync(async (req, res) => {
-  const totalPrice = req.body.totalPrice;
-  const service = req.body.service;
+  const { totalPrice, service, reservationId } = req.body;
   const user = await Account.findById(req.user.id);
   if (!user) {
     return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -42,9 +106,13 @@ const paymentWithMoMo = CatchAsync(async (req, res) => {
       message: "Please Login to order"
     });
   }
+
+  await getReservationForPayment(reservationId, req.user.id);
+
   const extraDataObj = {
     account: user.id,
-    service: service
+    service: service,
+    reservationId
   };
 
   var partnerCode = momoConfig.partnerCode;
@@ -119,6 +187,7 @@ const paymentWithMoMo = CatchAsync(async (req, res) => {
 
 const paymentWithZaloPay = CatchAsync(async (req, res) => {
   const totalPrice = req.body.totalPrice;
+  const { reservationId } = req.body;
   const user = await Account.findById(req.user.id);
   if (!user) {
     return res.status(StatusCodes.UNAUTHORIZED).json({
@@ -126,12 +195,16 @@ const paymentWithZaloPay = CatchAsync(async (req, res) => {
       message: "Please Login to order"
     });
   }
+
+  await getReservationForPayment(reservationId, req.user.id);
+
   const config = zaloPayConfig;
   const embed_data = {
     redirectUrl: "http://localhost:5173/home",
     customData: {
       account: user.id,
-      service: req.body.service
+      service: req.body.service,
+      reservationId
     }
   };
   const items = [{}];
@@ -176,14 +249,17 @@ const paymentWithZaloPay = CatchAsync(async (req, res) => {
 
 const paymentWithVnPay = CatchAsync(async (req, res) => {
   const totalPrice = req.body.totalPrice;
-  const service = req.body.service;
-  const user = Account.findOne({ where: { id: req.user.id } });
+  const { reservationId } = req.body;
+  const user = await Account.findById(req.user.id);
   if (!user) {
     return res.status(StatusCodes.NOT_FOUND).json({
       status: "fail",
       message: "User not found"
     });
   }
+
+  await getReservationForPayment(reservationId, req.user.id);
+
   const vnpay = new VNPay({
     tmnCode: vnPayConfig.tmnCode,
     secureSecret: vnPayConfig.secureSecret,
@@ -199,8 +275,12 @@ const paymentWithVnPay = CatchAsync(async (req, res) => {
   const paymentUrl = vnpay.buildPaymentUrl({
     vnp_Amount: totalPrice,
     vnp_IpAddr: "13.160.92.202",
-    vnp_TxnRef: "123456",
-    vnp_OrderInfo: "Thanh toan don hang 123456",
+    vnp_TxnRef: `${reservationId}-${Date.now()}`,
+    vnp_OrderInfo: JSON.stringify({
+      reservationId,
+      account: user.id,
+      service: req.body.service
+    }),
     vnp_OrderType: ProductCode.Other,
     vnp_ReturnUrl:
       "https://1643-14-186-89-251.ngrok-free.app/api/v1/payments/callbackwithVNPay",
@@ -235,21 +315,29 @@ const callbackZaloPay = CatchAsync(async (req, res) => {
   const customData = embedData.customData;
   const account = customData.account;
   const services = customData.service;
+  const reservationId = customData.reservationId;
 
-  await Order.create({
-    account: account,
-    service: services,
-    status: "Successful",
+  if (!reservationId) {
+    throw new AppError("Missing reservationId in payment callback", 400);
+  }
+
+  const confirmResult = await finalizeSuccessfulPayment({
+    reservationId,
+    paymentMethod: "ZaloPay",
+    paymentRef: dataJson.app_trans_id,
     totalPrice: dataJson.amount,
-    paymentMethod: "ZaloPay"
+    accountId: account,
+    serviceIds: services
   });
 
   return res.status(StatusCodes.OK).json({
     message: "Successful",
     account: account,
-    services: services
+    services: services,
+    appointmentId: confirmResult.appointment?._id || confirmResult.appointment
   });
 });
+
 const callbackMoMo = CatchAsync(async (req, res) => {
   let extraDataObj = {};
   if (req.body.extraData) {
@@ -259,30 +347,57 @@ const callbackMoMo = CatchAsync(async (req, res) => {
     ).toString();
     extraDataObj = JSON.parse(decodedExtraData);
   }
-  await Order.create({
-    account: extraDataObj.account,
-    service: extraDataObj.service,
-    status: "Successful",
+
+  if (!extraDataObj.reservationId) {
+    throw new AppError("Missing reservationId in payment callback", 400);
+  }
+
+  const confirmResult = await finalizeSuccessfulPayment({
+    reservationId: extraDataObj.reservationId,
     paymentMethod: req.body.payType + "-" + req.body.partnerCode,
-    totalPrice: req.body.amount
+    paymentRef: req.body.orderId,
+    totalPrice: req.body.amount,
+    accountId: extraDataObj.account,
+    serviceIds: extraDataObj.service
   });
+
   return res.status(StatusCodes.OK).json({
     status: "success",
     data: {
-      payUrl: req.body
+      appointmentId: confirmResult.appointment?._id || confirmResult.appointment
     }
   });
 });
+
 const callbackVnPay = CatchAsync(async (req, res) => {
-  const { orderInfo, resultCode } = req.query;
+  const orderInfoRaw = req.query.vnp_OrderInfo;
+  if (!orderInfoRaw) {
+    throw new AppError("Missing order info in VNPay callback", 400);
+  }
+
+  const orderInfo = JSON.parse(orderInfoRaw);
+  if (!orderInfo.reservationId) {
+    throw new AppError("Missing reservationId in VNPay callback", 400);
+  }
+
+  const confirmResult = await finalizeSuccessfulPayment({
+    reservationId: orderInfo.reservationId,
+    paymentMethod: "VNPay",
+    paymentRef: req.query.vnp_TxnRef,
+    totalPrice: req.query.vnp_Amount,
+    accountId: orderInfo.account,
+    serviceIds: orderInfo.service
+  });
+
   return res.status(StatusCodes.OK).json({
     status: "success",
     data: {
-      payUrl: req.query
+      appointmentId: confirmResult.appointment?._id || confirmResult.appointment
     }
   });
 });
-const paymentController = {
+
+module.exports = {
   paymentWithMoMo,
   paymentWithCOD,
   paymentWithZaloPay,
@@ -291,4 +406,3 @@ const paymentController = {
   callbackMoMo,
   callbackVnPay
 };
-module.exports = paymentController;

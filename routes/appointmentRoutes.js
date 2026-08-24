@@ -15,15 +15,36 @@ Router.route("/getByPeriod/:period").get(
   appointmentController.getAppointmentByPeriod
 );
 
+Router.route("/hold").post(
+  rbacMiddleware.isPermission(["user"]),
+  appointmentController.holdAppointment
+);
+
+Router.route("/reservations/:reservationId/cancel").delete(
+  rbacMiddleware.isPermission(["user"]),
+  appointmentController.cancelReservation
+);
+
 Router.route("/")
   .get(
     rbacMiddleware.isPermission(["admin", "user"]),
     appointmentController.getAllAppointments
   )
   .post(
-    rbacMiddleware.isPermission("user"),
+    rbacMiddleware.isPermission(["admin", "user"]),
     appointmentController.createAppointment
   );
+
+Router.route("/:id/status").patch(
+  rbacMiddleware.isPermission(["admin"]),
+  appointmentController.updateAppointmentStatus
+);
+
+Router.route("/:id/reschedule").patch(
+  rbacMiddleware.isPermission(["admin"]),
+  appointmentController.rescheduleAppointment
+);
+
 Router.route("/:id")
   .get(
     rbacMiddleware.isPermission(["admin", "user"]),
@@ -34,7 +55,7 @@ Router.route("/:id")
     appointmentController.updateAppointment
   )
   .delete(
-    rbacMiddleware.isPermission(["user"]),
+    rbacMiddleware.isPermission(["user", "admin"]),
     appointmentController.deleteAppointment
   );
 
