@@ -1,0 +1,5 @@
+# Deprecated: use docker-compose.yml (redis + mongo + elasticsearch).
+# Kept so old commands still work.
+
+include:
+  - docker-compose.yml

@@ -25,6 +25,7 @@ const orderRoutes = require("./routes/orderRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const conservationRoutes = require("./routes/conservationRoutes");
 const messageRoutes = require("./routes/messageRoutes");
+const searchRoutes = require("./routes/searchRoutes");
 const availabilityRoutes = require("./routes/availabilityRoutes");
 
 const corsOption = require("./config/corsOption");
@@ -108,6 +109,7 @@ app.use("/api/v1/appointments", appointmentRoutes);
 app.use("/api/v1/shifts", shiftRoutes);
 app.use("/api/v1/availability", availabilityRoutes);
 app.use("/api/v1/payments", paymentRoutes);
+app.use("/api/v1/search", searchRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/reviews", reviewRoutes);
 app.use("/api/v1/conservations", conservationRoutes);

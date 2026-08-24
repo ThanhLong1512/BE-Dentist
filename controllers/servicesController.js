@@ -2,6 +2,7 @@ const Service = require("../models/ServicesModel");
 const cloudinary = require("../providers/CloudinaryProvider");
 const factory = require("./handlerFactory");
 const fs = require("fs");
+const { indexService, deleteService } = require("../search/indexer");
 
 exports.getAllServices = factory.getAll(Service);
 exports.getService = factory.getOne(Service);
@@ -54,6 +55,9 @@ exports.createService = async (req, res) => {
         url: result.secure_url
       }
     });
+
+    // Index for fuzzy/full-text search
+    await indexService(service._id);
 
     res.status(201).json({
       success: true,
@@ -164,6 +168,8 @@ exports.updateService = async (req, res) => {
         runValidators: true
       });
 
+      await indexService(updatedService._id);
+
       return res.status(200).json({
         success: true,
         message: "Service updated successfully",
@@ -203,6 +209,7 @@ exports.deleteService = async (req, res) => {
     await cloudinary.uploader.destroy(service.photoService.public_id);
 
     await Service.deleteOne({ _id: req.params.id });
+    await deleteService(service._id);
 
     res.status(200).json({
       success: true,
