@@ -1,24 +1,13 @@
 const Appointment = require("../models/AppointmentModel");
-const Patient = require("../models/PatientModel");
-const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 const factory = require("./handlerFactory");
 const { StatusCodes } = require("http-status-codes");
-const {
-  holdSeat,
-  expireReservationById
-} = require("../services/reservationService");
-const { releaseHold } = require("../utils/holdSeat");
-const AppointmentReservation = require("../models/AppointmentReservationModel");
+const { holdSeat } = require("../services/reservationService");
 const {
   updateAppointmentStatus,
   rescheduleAppointment
 } = require("../services/appointmentStatusService");
-const { cancelAppointmentReminders, scheduleAppointmentReminders } = require("../services/appointmentNotificationService");
-const { emitAppointmentUpdated } = require("../providers/socketProvider");
-const { invalidateSlotCacheByDateKey } = require("../services/slotCacheService");
-const { getSlotDateKey } = require("../utils/slotDate");
-const { indexAppointment, deleteAppointment } = require("../search/indexer");
+const appointmentService = require("../services/appointmentService");
 
 exports.holdAppointment = catchAsync(async (req, res) => {
   const {
@@ -26,12 +15,8 @@ exports.holdAppointment = catchAsync(async (req, res) => {
     Date: appointmentDate,
     serviceId,
     slotStart,
-    slotEnd,
+    slotEnd
   } = req.body;
-
-  if (!shift || !appointmentDate) {
-    throw new AppError("Please provide shift and Date", 400);
-  }
 
   const result = await holdSeat({
     accountId: req.user.id,
@@ -39,7 +24,7 @@ exports.holdAppointment = catchAsync(async (req, res) => {
     dateInput: appointmentDate,
     serviceId: serviceId || null,
     slotStart: slotStart || null,
-    slotEnd: slotEnd || null,
+    slotEnd: slotEnd || null
   });
 
   res.status(StatusCodes.CREATED).json({
@@ -50,31 +35,14 @@ exports.holdAppointment = catchAsync(async (req, res) => {
 });
 
 exports.createAppointment = catchAsync(async (req, res) => {
-  if (req.user.role !== "admin") {
-    throw new AppError(
-      "Direct booking is disabled. Use POST /appointments/hold and complete payment.",
-      400
-    );
-  }
+  const { shift, Date: appointmentDate, account } = req.body;
 
-  const { shift, Date: appointmentDate } = req.body;
-  const patient = await Patient.findOne({ account: req.body.account || req.user.id });
-
-  if (!patient) {
-    throw new AppError("No patient profile found", 404);
-  }
-
-  const appointment = await Appointment.create({
-    patient: patient._id,
+  const populated = await appointmentService.createAdminAppointment({
+    accountId: account || req.user.id,
     shift,
-    Date: appointmentDate
+    dateInput: appointmentDate,
+    actorRole: req.user.role
   });
-
-  await scheduleAppointmentReminders(appointment._id);
-  const populated = await Appointment.findById(appointment._id);
-  emitAppointmentUpdated(populated);
-
-  await indexAppointment(appointment._id);
 
   res.status(201).json({
     status: "success",
@@ -84,26 +52,9 @@ exports.createAppointment = catchAsync(async (req, res) => {
 });
 
 exports.getAppointmentByUser = catchAsync(async (req, res) => {
-  const userID = req.user.id;
-  if (!userID) {
-    return res.status(StatusCodes.UNAUTHORIZED).json({
-      message: "Please Login to check your appointment"
-    });
-  }
-  const patient = await Patient.findOne({ account: userID });
-
-  if (!patient) {
-    return res.status(StatusCodes.NOT_FOUND).json({
-      message: "No patient profile found for this account"
-    });
-  }
-  const appointments = await Appointment.find({ patient: patient._id });
-
-  if (!appointments || appointments.length === 0) {
-    return res.status(StatusCodes.NOT_FOUND).json({
-      message: "No appointments found for this account"
-    });
-  }
+  const appointments = await appointmentService.getAppointmentsForAccount(
+    req.user.id
+  );
 
   return res.status(StatusCodes.OK).json({
     status: "Successful",
@@ -113,47 +64,24 @@ exports.getAppointmentByUser = catchAsync(async (req, res) => {
   });
 });
 
-exports.getAppointmentByPeriod = catchAsync(async (req, res, next) => {
-  const { period } = req.params;
-
-  const validPeriods = [7, 30, 90];
-  const periodNumber = parseInt(period);
-
-  if (!validPeriods.includes(periodNumber)) {
-    return res.status(StatusCodes.BAD_REQUEST).json({
-      status: "error",
-      message: "Invalid period. Please use 7, 30, or 90 days"
-    });
-  }
-
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(endDate.getDate() - periodNumber);
-
-  const appointments = await Appointment.find({
-    Date: {
-      $gte: startDate,
-      $lte: endDate
-    }
-  }).sort({ Date: -1 });
+exports.getAppointmentByPeriod = catchAsync(async (req, res) => {
+  const periodNumber = parseInt(req.params.period, 10);
+  const count = await appointmentService.getAppointmentCountByPeriod(
+    periodNumber
+  );
 
   return res.status(StatusCodes.OK).json({
     status: "Successful",
     data: {
-      count: appointments.length
+      count
     }
   });
 });
 
 exports.updateAppointmentStatus = catchAsync(async (req, res) => {
-  const { status } = req.body;
-  if (!status) {
-    throw new AppError("Please provide status", 400);
-  }
-
   const { appointment } = await updateAppointmentStatus(
     req.params.id,
-    status,
+    req.body.status,
     req.user
   );
 
@@ -165,9 +93,6 @@ exports.updateAppointmentStatus = catchAsync(async (req, res) => {
 
 exports.rescheduleAppointment = catchAsync(async (req, res) => {
   const { Date: appointmentDate, shift, reason } = req.body;
-  if (!appointmentDate && !shift) {
-    throw new AppError("Please provide Date and/or shift to reschedule", 400);
-  }
 
   const appointment = await rescheduleAppointment(
     req.params.id,
@@ -182,30 +107,8 @@ exports.rescheduleAppointment = catchAsync(async (req, res) => {
   });
 });
 
-exports.deleteAppointment = catchAsync(async (req, res, next) => {
-  const appointment = await Appointment.findById(req.params.id);
-  if (!appointment) {
-    return next(new AppError("No document found with that ID", 404));
-  }
-
-  await cancelAppointmentReminders(req.params.id);
-  await Appointment.findByIdAndDelete(req.params.id);
-
-  await deleteAppointment(req.params.id);
-
-  const reservation = await AppointmentReservation.findOne({
-    appointment: req.params.id
-  });
-  if (reservation) {
-    reservation.status = "cancelled";
-    await reservation.save();
-  }
-
-  if (appointment.Date) {
-    await invalidateSlotCacheByDateKey({
-      dateKey: getSlotDateKey(appointment.Date)
-    });
-  }
+exports.deleteAppointment = catchAsync(async (req, res) => {
+  await appointmentService.deleteAppointmentById(req.params.id);
 
   res.status(204).json({
     status: "success",
@@ -214,37 +117,10 @@ exports.deleteAppointment = catchAsync(async (req, res, next) => {
 });
 
 exports.cancelReservation = catchAsync(async (req, res) => {
-  const { reservationId } = req.params;
-  const reservation = await AppointmentReservation.findById(reservationId).populate(
-    "patient"
-  );
-
-  if (!reservation) {
-    throw new AppError("Reservation not found", 404);
-  }
-
-  if (String(reservation.patient.account) !== String(req.user.id)) {
-    throw new AppError("You are not allowed to cancel this reservation", 403);
-  }
-
-  if (reservation.status !== "pending") {
-    throw new AppError("Only pending reservations can be cancelled", 409);
-  }
-
-  reservation.status = "cancelled";
-  await reservation.save();
-  await releaseHold(
-    reservation.shift,
-    reservation.Date,
-    String(reservation._id),
-    reservation.slotStart
-  );
-
-  if (reservation.Date) {
-    await invalidateSlotCacheByDateKey({
-      dateKey: getSlotDateKey(reservation.Date)
-    });
-  }
+  await appointmentService.cancelReservationByUser({
+    reservationId: req.params.reservationId,
+    accountId: req.user.id
+  });
 
   res.status(StatusCodes.OK).json({
     status: "success",
