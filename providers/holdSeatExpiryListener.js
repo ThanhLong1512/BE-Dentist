@@ -5,12 +5,16 @@ let subscriber = null;
 
 const initHoldSeatExpiryListener = async () => {
   try {
-    subscriber = redis.createClient({
-      socket: {
-        host: process.env.REDIS_HOST || "localhost",
-        port: parseInt(process.env.REDIS_PORT, 10) || 6379
-      }
-    });
+    const clientOptions = process.env.REDIS_URL
+      ? { url: process.env.REDIS_URL }
+      : {
+          socket: {
+            host: process.env.REDIS_HOST || "localhost",
+            port: parseInt(process.env.REDIS_PORT, 10) || 6379
+          }
+        };
+
+    subscriber = redis.createClient(clientOptions);
 
     subscriber.on("error", error => {
       console.error("Hold seat expiry listener error:", error.message);

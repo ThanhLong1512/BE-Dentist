@@ -25,12 +25,10 @@ const REDIS_CONNECT_MESSAGE = {
 let connectionTimeout;
 
 const handleTimeoutConnect = () => {
+  if (connectionTimeout) clearTimeout(connectionTimeout);
   connectionTimeout = setTimeout(() => {
-    logger.error("Redis connection timeout");
-    throw new AppError(
-      REDIS_CONNECT_MESSAGE.message.vn,
-      REDIS_CONNECT_MESSAGE.code
-    );
+    logger.warn("Redis connection timeout reached");
+    isConnected = false;
   }, REDIS_CONNECT_TIMEOUT);
 };
 
@@ -48,19 +46,16 @@ const handleEventConnection = connectionRedis => {
   connectionRedis.on(statusConnectRedis.ENDED, () => {
     logger.warn("Redis client connection ended");
     isConnected = false;
-    handleTimeoutConnect();
   });
 
   connectionRedis.on(statusConnectRedis.RECONNECTING, () => {
     logger.warn("Redis client reconnecting");
     isConnected = false;
-    clearTimeout(connectionTimeout);
   });
 
   connectionRedis.on("error", error => {
-    logger.error("Redis client connection error", { message: error.message });
+    logger.warn("Redis client connection error:", { message: error.message });
     isConnected = false;
-    handleTimeoutConnect();
   });
 };
 
@@ -68,21 +63,41 @@ const initRedis = async () => {
   try {
     logger.info("Initializing Redis connection");
 
-    const instanceRedis = redis.createClient({
-      socket: {
-        host: process.env.REDIS_HOST || "localhost",
-        port: parseInt(process.env.REDIS_PORT) || 6379,
-        reconnectStrategy: retries => {
-          return Math.min(retries * 100, 3000);
-        }
+    const reconnectStrategy = retries => {
+      if (retries > 2) {
+        logger.warn("Redis max reconnect retries reached (2), stopping reconnection.");
+        return false;
       }
-    });
+      return Math.min(retries * 300, 1000);
+    };
+
+    const clientOptions = process.env.REDIS_URL
+      ? {
+          url: process.env.REDIS_URL,
+          socket: { reconnectStrategy }
+        }
+      : {
+          socket: {
+            host: process.env.REDIS_HOST || "localhost",
+            port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+            reconnectStrategy
+          }
+        };
+
+    const instanceRedis = redis.createClient(clientOptions);
 
     handleEventConnection(instanceRedis);
 
-    await instanceRedis.connect();
+    // Give connect() maximum 3.5 seconds to succeed
+    await Promise.race([
+      instanceRedis.connect(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Redis connection timeout (3.5s)")), 3500)
+      )
+    ]);
 
     client = instanceRedis;
+    isConnected = true;
 
     logger.info("Redis initialized successfully");
 
@@ -91,22 +106,32 @@ const initRedis = async () => {
 
     return instanceRedis;
   } catch (error) {
-    logger.error("Redis initialization failed", {
-      message: error.message,
-      stack: error.stack
+    logger.warn("Redis initialization skipped or failed:", {
+      message: error.message
     });
     isConnected = false;
     throw error;
   }
 };
 
-const getRedis = () => {
-  if (!client) {
-    throw new Error("Redis client not initialized. Call initRedis() first.");
-  }
+const mockRedisClient = {
+  get: async () => null,
+  set: async () => "OK",
+  del: async () => 0,
+  keys: async () => [],
+  expire: async () => 1,
+  ttl: async () => -1,
+  hGet: async () => null,
+  hSet: async () => 1,
+  hGetAll: async () => ({})
+};
 
-  if (!isConnected) {
-    throw new Error("Redis client is not connected.");
+const getRedis = () => {
+  if (!client || !isConnected) {
+    return {
+      instanceConnect: mockRedisClient,
+      isConnected: false
+    };
   }
 
   return {
