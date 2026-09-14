@@ -1,3 +1,12 @@
+// Polyfill SlowBuffer for compatibility with buffer-equal-constant-time/jwa across Node.js versions
+const bufferModule = require("buffer");
+if (!bufferModule.SlowBuffer) {
+  bufferModule.SlowBuffer = bufferModule.Buffer;
+}
+if (!bufferModule.SlowBuffer.prototype) {
+  bufferModule.SlowBuffer.prototype = bufferModule.Buffer.prototype;
+}
+
 const dotenv = require("dotenv");
 dotenv.config({ path: "./config.env" });
 

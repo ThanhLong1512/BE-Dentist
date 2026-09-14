@@ -10,7 +10,7 @@
     "export": "node data/import-dev-data.js --delete"
   },
   "engines": {
-    "node": ">=20.12.2",
+    "node": "20.x",
     "npm": ">=10.2.0"
   },
   "author": "",

@@ -100,7 +100,8 @@ const initSocketServer = (serverOrPort = 8090) => {
     });
   });
 
-  console.log(`Socket.IO running on port ${port}`);
+  const displayTarget = typeof serverOrPort === "number" ? `port ${serverOrPort}` : "HTTP server";
+  console.log(`Socket.IO running attached to ${displayTarget}`);
   return io;
 };
 
