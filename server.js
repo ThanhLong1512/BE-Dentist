@@ -49,6 +49,14 @@ const connectDB = async () => {
     return;
   }
 
+  const isLocalDb = rawDb.includes("127.0.0.1") || rawDb.includes("localhost");
+  if (process.env.NODE_ENV === "production" && isLocalDb) {
+    logger.warn(
+      "DATABASE points to localhost (127.0.0.1) in production! Please set the DATABASE environment variable in your Render Dashboard to your MongoDB Atlas connection URI (mongodb+srv://...)."
+    );
+    return;
+  }
+
   const DB_URI = rawDb.replace(
     "<PASSWORD>",
     process.env.DATABASE_PASSWORD || ""

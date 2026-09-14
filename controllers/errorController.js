@@ -31,18 +31,23 @@ const isOperationalError = err =>
   Boolean(err.isOperational || err.Operational);
 
 const reportError = (err, req) => {
-  const shouldReport =
+  const isServerOrCritical =
     !isOperationalError(err) || (err.statusCode && err.statusCode >= 500);
 
-  logger.error(err.message, {
-    statusCode: err.statusCode,
-    stack: err.stack,
-    url: req.originalUrl,
-    method: req.method
-  });
-
-  if (shouldReport) {
+  if (isServerOrCritical) {
+    logger.error(err.message, {
+      statusCode: err.statusCode,
+      stack: err.stack,
+      url: req.originalUrl,
+      method: req.method
+    });
     captureException(err, { req });
+  } else {
+    logger.warn(err.message, {
+      statusCode: err.statusCode,
+      url: req.originalUrl,
+      method: req.method
+    });
   }
 };
 
