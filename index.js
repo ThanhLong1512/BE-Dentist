@@ -120,6 +120,8 @@ app.use(
     ]
   })
 );
+app.get("/favicon.ico", (req, res) => res.status(204).end());
+
 app.get("/", (req, res) => {
   logger.info("Root health probe accessed");
   res.status(200).json({
