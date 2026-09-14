@@ -20,25 +20,37 @@ app.use((req, res, next) => {
 
 const START_SERVER = async () => {
   try {
-    await initRedis();
-    await initHoldSeatExpiryListener();
-    initSocketServer(parseInt(process.env.SOCKET_PORT, 10) || 8090);
-    await startNotificationWorker();
+    try {
+      await initRedis();
+      await initHoldSeatExpiryListener();
+      await startNotificationWorker();
+    } catch (redisErr) {
+      logger.warn("Redis / Notification Worker init skipped or failed:", {
+        message: redisErr.message
+      });
+    }
 
-    const DB_URI = process.env.DATABASE.replace(
+    const DB_URI = (process.env.DATABASE || "").replace(
       "<PASSWORD>",
-      process.env.DATABASE_PASSWORD
+      process.env.DATABASE_PASSWORD || ""
     );
 
     await mongoose.connect(DB_URI);
     logger.info("Database connected successfully");
 
-    const host = process.env.LOCAL_DEV_APP_HOST || "0.0.0.0";
-    const port = process.env.LOCAL_DEV_APP_PORT || 3000;
+    const host = process.env.HOST || (process.env.PORT ? "0.0.0.0" : (process.env.LOCAL_DEV_APP_HOST || "0.0.0.0"));
+    const port = process.env.PORT || process.env.LOCAL_DEV_APP_PORT || 8080;
 
     return new Promise((resolve, reject) => {
       const server = app.listen(port, host, () => {
         logger.info(`Server running at http://${host}:${port}`);
+
+        if (process.env.SOCKET_PORT && process.env.NODE_ENV === "development") {
+          initSocketServer(parseInt(process.env.SOCKET_PORT, 10));
+        } else {
+          initSocketServer(server);
+        }
+
         resolve(server);
       });
 

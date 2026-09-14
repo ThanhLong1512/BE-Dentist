@@ -68,15 +68,22 @@ const initRedis = async () => {
   try {
     logger.info("Initializing Redis connection");
 
-    const instanceRedis = redis.createClient({
-      socket: {
-        host: process.env.REDIS_HOST || "localhost",
-        port: parseInt(process.env.REDIS_PORT) || 6379,
-        reconnectStrategy: retries => {
-          return Math.min(retries * 100, 3000);
+    const clientOptions = process.env.REDIS_URL
+      ? {
+          url: process.env.REDIS_URL,
+          socket: {
+            reconnectStrategy: retries => Math.min(retries * 100, 3000)
+          }
         }
-      }
-    });
+      : {
+          socket: {
+            host: process.env.REDIS_HOST || "localhost",
+            port: parseInt(process.env.REDIS_PORT, 10) || 6379,
+            reconnectStrategy: retries => Math.min(retries * 100, 3000)
+          }
+        };
+
+    const instanceRedis = redis.createClient(clientOptions);
 
     handleEventConnection(instanceRedis);
 

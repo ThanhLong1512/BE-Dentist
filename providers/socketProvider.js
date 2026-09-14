@@ -2,12 +2,12 @@ const { Server } = require("socket.io");
 
 let io = null;
 
-const initSocketServer = (port = 8090) => {
+const initSocketServer = (serverOrPort = 8090) => {
   if (io) return io;
 
-  io = new Server(port, {
+  io = new Server(serverOrPort, {
     cors: {
-      origin: process.env.FRONTEND_URL || "http://localhost:5173",
+      origin: (origin, callback) => callback(null, true),
       credentials: true
     }
   });
