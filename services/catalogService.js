@@ -1,5 +1,5 @@
 const Service = require("../models/ServicesModel");
-const cloudinary = require("../providers/CloudinaryProvider");
+const localStorage = require("../providers/LocalStorageProvider");
 const fs = require("fs");
 const AppError = require("../utils/appError");
 const { indexService, deleteService } = require("../search/indexer");
@@ -9,36 +9,7 @@ const uploadServicePhoto = async file => {
     throw new AppError("Please provide a service photo", 400);
   }
 
-  if (file.buffer) {
-    return cloudinary.uploader.upload(
-      `data:${file.mimetype};base64,${file.buffer.toString("base64")}`,
-      {
-        folder: "dental-services",
-        width: 600,
-        height: 400,
-        crop: "fill",
-        quality: "auto",
-        fetch_format: "auto"
-      }
-    );
-  }
-
-  if (file.path) {
-    const result = await cloudinary.uploader.upload(file.path, {
-      folder: "dental-services",
-      width: 600,
-      height: 400,
-      crop: "fill",
-      quality: "auto",
-      fetch_format: "auto"
-    });
-    if (fs.existsSync(file.path)) {
-      fs.unlinkSync(file.path);
-    }
-    return result;
-  }
-
-  throw new AppError("Invalid file format", 400);
+  return localStorage.upload(file, { folder: "services" });
 };
 
 const createService = async ({ body, file }) => {
@@ -115,13 +86,13 @@ const updateService = async ({ id, body, file }) => {
   if (file) {
     if (existingService.photoService?.public_id) {
       try {
-        await cloudinary.uploader.destroy(
+        await localStorage.destroy(
           existingService.photoService.public_id
         );
-      } catch (cloudinaryError) {
+      } catch (storageError) {
         console.warn(
-          "Failed to delete old image from Cloudinary:",
-          cloudinaryError
+          "Failed to delete old image:",
+          storageError.message
         );
       }
     }
@@ -153,7 +124,7 @@ const deleteServiceById = async id => {
   }
 
   if (service.photoService?.public_id) {
-    await cloudinary.uploader.destroy(service.photoService.public_id);
+    await localStorage.destroy(service.photoService.public_id);
   }
 
   await Service.deleteOne({ _id: id });

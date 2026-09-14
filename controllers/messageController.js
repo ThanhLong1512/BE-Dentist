@@ -22,3 +22,26 @@ exports.getMessageByConservation = CatchAsync(async (req, res) => {
     }
   });
 });
+
+exports.uploadMedia = CatchAsync(async (req, res, next) => {
+  if (!req.file) {
+    return res.status(400).json({
+      status: "fail",
+      message: "Vui lòng chọn tệp ảnh hoặc âm thanh!"
+    });
+  }
+
+  const localStorage = require("../providers/LocalStorageProvider");
+  const isAudio = req.file.mimetype.startsWith("audio/");
+  const result = await localStorage.upload(req.file, {
+    folder: "chat"
+  });
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      url: result.secure_url,
+      resourceType: isAudio ? "audio" : "image"
+    }
+  });
+});

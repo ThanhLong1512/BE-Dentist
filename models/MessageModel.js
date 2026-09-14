@@ -14,7 +14,16 @@ const messageSchema = new mongoose.Schema(
     },
     content: {
       type: String,
-      required: [true, "Message content is required"]
+      default: ""
+    },
+    messageType: {
+      type: String,
+      enum: ["text", "image", "audio"],
+      default: "text"
+    },
+    mediaUrl: {
+      type: String,
+      default: ""
     }
   },
   { timestamps: true }

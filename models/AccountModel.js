@@ -39,13 +39,12 @@ const accountSchema = new mongoose.Schema(
     },
     photo: {
       type: String,
-      default:
-        "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1747498070/user_tqd94a.jpg"
+      default: "/images/resource/avatar-1.jpg"
     },
     photoPublicId: {
       type: String,
       select: false,
-      default: "user_tqd94a"
+      default: "default_avatar"
     },
     isLocked: {
       type: Boolean,

@@ -8,6 +8,10 @@ const ELASTIC_PASSWORD = process.env.ELASTIC_PASSWORD || "";
 
 const client = new Client({
   node: ELASTIC_URL,
+  headers: {
+    accept: "application/vnd.elasticsearch+json; compatible-with=8",
+    "content-type": "application/vnd.elasticsearch+json; compatible-with=8"
+  },
   auth:
     ELASTIC_USER && ELASTIC_PASSWORD
       ? { username: ELASTIC_USER, password: ELASTIC_PASSWORD }

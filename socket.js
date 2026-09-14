@@ -22,12 +22,15 @@ io.on("connection", socket => {
     io.emit("getUsers", users);
   });
   //send message and get message from client
-  socket.on("sendMessage", ({ senderID, receiverID, text }) => {
+  socket.on("sendMessage", (payload) => {
+    const { senderID, receiverID, text, messageType = "text", mediaUrl = "" } = payload || {};
     const user = getUser(receiverID);
     if (user) {
       io.to(user.socketID).emit("getMessage", {
         senderID,
-        text
+        text,
+        messageType,
+        mediaUrl
       });
     }
   });

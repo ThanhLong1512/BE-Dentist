@@ -5,8 +5,8 @@
     "Unit": "Package",
     "priceService": 450000,
     "photoService": {
-      "public_id": "5_nusbyb",
-      "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/5_nusbyb.jpg"
+      "public_id": "services/service-5.jpg",
+      "url": "http://127.0.0.1:8080/uploads/services/service-5.jpg"
     },
     "summary": "Comprehensive laboratory testing for health diagnostics.",
     "priceDiscount": 380000,
@@ -19,8 +19,8 @@
     "priceService": 350000,
     "priceDiscount": 330000,
     "photoService": {
-      "public_id": "8_bz3c3y",
-      "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/8_bz3c3y.jpg"
+      "public_id": "services/service-8.jpg",
+      "url": "http://127.0.0.1:8080/uploads/services/service-8.jpg"
     },
     "summary": "Routine dental examination and cleaning.",
     "description": "Comprehensive dental examination, professional cleaning, and minor treatments to maintain oral health and prevent dental issues."
@@ -32,8 +32,8 @@
     "priceService": 250000,
     "priceDiscount": 238000,
     "photoService": {
-      "public_id": "6_wxxpua",
-      "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/6_wxxpua.jpg"
+      "public_id": "services/service-6.jpg",
+      "url": "http://127.0.0.1:8080/uploads/services/service-6.jpg"
     },
     "summary": "Comprehensive vision and eye health assessment.",
     "description": "Vision testing, eye pressure measurements, and general eye health assessment to ensure optimal vision and detect potential eye conditions."
@@ -45,8 +45,8 @@
     "priceService": 400000,
     "priceDiscount": 380000,
     "photoService": {
-      "public_id": "2_lskhri",
-      "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/2_lskhri.jpg"
+      "public_id": "services/service-2.jpg",
+      "url": "http://127.0.0.1:8080/uploads/services/service-2.jpg"
     },
     "summary": "Professional physical therapy for recovery.",
     "description": "Professional physical therapy sessions designed to aid injury recovery, improve mobility, and manage chronic pain effectively."
@@ -58,8 +58,8 @@
     "priceService": 280000,
     "priceDiscount": 250000,
     "photoService": {
-      "public_id": "7_izvzv1",
-      "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/7_izvzv1.jpg"
+      "public_id": "services/service-7.jpg",
+      "url": "http://127.0.0.1:8080/uploads/services/service-7.jpg"
     },
     "summary": "Personalized dietary advice for better health.",
     "description": "Receive personalized dietary advice and nutrition planning tailored to your health goals and lifestyle for optimal well-being."
@@ -71,8 +71,8 @@
     "priceService": 200000,
     "priceDiscount": 170000,
     "photoService": {
-      "public_id": "3_svrwry",
-      "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/3_svrwry.jpg"
+      "public_id": "services/service-3.jpg",
+      "url": "http://127.0.0.1:8080/uploads/services/service-3.jpg"
     },
     "summary": "Standard vaccinations for all ages.",
     "description": "Standard vaccinations for adults and children, including medical consultation to ensure safety and effectiveness."
@@ -84,8 +84,8 @@
     "priceService": 550000,
     "priceDiscount": 400000,
     "photoService": {
-      "public_id": "10_ge9daz",
-      "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/10_ge9daz.jpg"
+      "public_id": "services/service-1.jpg",
+      "url": "http://127.0.0.1:8080/uploads/services/service-1.jpg"
     },
     "summary": "Professional psychological support.",
     "description": "Professional psychological assessment and therapy sessions with licensed counselors to address mental health concerns and improve well-being."
@@ -97,8 +97,8 @@
     "priceService": 320000,
     "priceDiscount": 300000,
     "photoService": {
-      "public_id": "9_tlr1sz",
-      "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/9_tlr1sz.jpg"
+      "public_id": "services/service-9.jpg",
+      "url": "http://127.0.0.1:8080/uploads/services/service-9.jpg"
     },
     "summary": "Specialized examination for ears, nose, and throat.",
     "description": "Comprehensive examination of ears, nose, and throat by specialists to diagnose and treat ENT-related conditions effectively."
@@ -110,8 +110,8 @@
     "priceService": 600000,
     "priceDiscount": 530000,
     "photoService": {
-      "public_id": "4_acpyvj",
-      "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/4_acpyvj.jpg"
+      "public_id": "services/service-4.jpg",
+      "url": "http://127.0.0.1:8080/uploads/services/service-4.jpg"
     },
     "summary": "Non-invasive imaging for diagnostics.",
     "description": "Non-invasive imaging of internal organs to aid in diagnostic purposes and provide detailed insights into your health."
@@ -123,8 +123,8 @@
     "priceService": 750000,
     "priceDiscount": 72000,
     "photoService": {
-      "public_id": "10_ge9daz",
-      "url": "https://res.cloudinary.com/dzjc0p4hx/image/upload/v1743946449/10_ge9daz.jpg"
+      "public_id": "services/service-10.jpg",
+      "url": "http://127.0.0.1:8080/uploads/services/service-10.jpg"
     },
     "summary": "Comprehensive heart health evaluation.",
     "description": "Heart health evaluation including ECG, stress tests, and consultations with cardiology specialists to ensure optimal cardiovascular health."

@@ -1,10 +1,9 @@
 const Account = require("./../models/AccountModel");
 const factory = require("./handlerFactory");
 const CatchAsync = require("./../utils/catchAsync");
-const cloudinary = require("../providers/CloudinaryProvider");
+const localStorage = require("../providers/LocalStorageProvider");
 const { StatusCodes } = require("http-status-codes");
 const bcrypt = require("bcryptjs");
-const stream = require("stream");
 
 exports.setAccountIds = (req, res, next) => {
   if (!req.body.account) req.body.account = req.user.id;
@@ -37,141 +36,97 @@ exports.getAccountByUser = CatchAsync(async (req, res) => {
 exports.getAllAccounts = factory.getAll(Account);
 exports.getAccount = factory.getOne(Account);
 exports.updateAccount = factory.updateOne(Account);
+
+const uploadImageBuffer = async (file) => {
+  return await localStorage.upload(file, { folder: "avatars" });
+};
+
 exports.updateMyAccount = CatchAsync(async (req, res) => {
   const userID = req.user.id;
-  let updateData = { ...req.body };
+  let updateData = {};
 
-  if (req.file) {
-    try {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder: "dental-services",
-          transformation: [{ width: 500, height: 500, crop: "fill" }]
-        },
-        async (error, result) => {
-          if (error) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-              status: "Failed",
-              message: "Failed to upload image. Please try again.",
-              error: error.message
-            });
-          }
-          updateData.photo = result.secure_url;
-          updateData.photoPublicId = result.public_id;
+  // Allow safe profile fields
+  if (req.body.name && typeof req.body.name === "string") {
+    updateData.name = req.body.name.trim();
+  }
+  if (req.body.phone && typeof req.body.phone === "string") {
+    updateData.phone = req.body.phone.trim();
+  }
+  if (req.body.gender) updateData.gender = req.body.gender;
+  if (req.body.dateOfBirth) updateData.dateOfBirth = req.body.dateOfBirth;
+  if (req.body.address) updateData.address = req.body.address;
 
-          try {
-            const updatedAccount = await Account.findByIdAndUpdate(
-              userID,
-              updateData,
-              {
-                new: true,
-                runValidators: true
-              }
-            );
-
-            if (!updatedAccount) {
-              return res.status(StatusCodes.NOT_FOUND).json({
-                status: "Failed",
-                message: "No account found with that ID"
-              });
-            }
-
-            res.status(StatusCodes.OK).json({
-              status: "Success",
-              data: {
-                data: updatedAccount
-              }
-            });
-          } catch (dbError) {
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-              status: "Failed",
-              message: "Failed to update account",
-              error: dbError.message
-            });
-          }
-        }
-      );
-
-      const bufferStream = new stream.PassThrough();
-      bufferStream.end(req.file.buffer);
-      bufferStream.pipe(uploadStream);
-    } catch (error) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
+  // Handle password update if passed
+  if (req.body.password || req.body.currentPassword) {
+    const user = await Account.findById(userID).select("+password");
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json({
         status: "Failed",
-        message: "Failed to upload image. Please try again.",
-        error: error.message
+        message: "No account found with that ID"
       });
     }
-  } else {
-    try {
-      if (updateData.password || updateData.currentPassword) {
-        const user = await Account.findById(userID).select("+password");
-        if (!user) {
-          return res.status(StatusCodes.NOT_FOUND).json({
-            status: "Failed",
-            message: "No account found with that ID"
-          });
-        }
 
-        if (updateData.currentPassword) {
-          const isCurrentPasswordCorrect = await bcrypt.compare(
-            updateData.currentPassword,
-            user.password
-          );
+    if (req.body.currentPassword) {
+      const isCurrentPasswordCorrect = await bcrypt.compare(
+        req.body.currentPassword,
+        user.password
+      );
 
-          if (!isCurrentPasswordCorrect) {
-            return res.status(StatusCodes.BAD_REQUEST).json({
-              status: "Failed",
-              message: "The current password you entered is incorrect"
-            });
-          }
-        }
-
-        Object.keys(updateData).forEach(key => {
-          if (key !== "currentPassword") {
-            user[key] = updateData[key];
-          }
-        });
-
-        const updatedUser = await user.save();
-
-        res.status(StatusCodes.OK).json({
-          status: "Success",
-          data: {
-            data: updatedUser
-          }
-        });
-      } else {
-        const updatedAccount = await Account.findByIdAndUpdate(
-          userID,
-          updateData,
-          {
-            new: true,
-            runValidators: true
-          }
-        );
-
-        if (!updatedAccount) {
-          return res.status(StatusCodes.NOT_FOUND).json({
-            status: "Failed",
-            message: "No account found with that ID"
-          });
-        }
-
-        res.status(StatusCodes.OK).json({
-          status: "Success",
-          data: {
-            data: updatedAccount
-          }
+      if (!isCurrentPasswordCorrect) {
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          status: "Failed",
+          message: "The current password you entered is incorrect"
         });
       }
-    } catch (error) {
-      console.error("Update account error:", error);
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        status: "Failed",
-        message: "Failed to update account",
-        error: error.message
+    }
+
+    if (req.body.password) {
+      user.password = req.body.password;
+      user.passwordConfirm = req.body.passwordConfirm;
+      const updatedUser = await user.save();
+      return res.status(StatusCodes.OK).json({
+        status: "Success",
+        data: {
+          data: updatedUser
+        }
       });
     }
   }
+
+  // Handle avatar upload
+  if (req.file) {
+    try {
+      const result = await uploadImageBuffer(req.file);
+      updateData.photo = result.secure_url;
+      updateData.photoPublicId = result.public_id;
+    } catch (uploadError) {
+      console.warn(
+        "Cloudinary upload failed, falling back to data URI:",
+        uploadError.message
+      );
+      const mime = req.file.mimetype || "image/jpeg";
+      const base64 = req.file.buffer.toString("base64");
+      updateData.photo = `data:${mime};base64,${base64}`;
+      updateData.photoPublicId = "inline_avatar";
+    }
+  }
+
+  const updatedAccount = await Account.findByIdAndUpdate(userID, updateData, {
+    new: true,
+    runValidators: true
+  });
+
+  if (!updatedAccount) {
+    return res.status(StatusCodes.NOT_FOUND).json({
+      status: "Failed",
+      message: "No account found with that ID"
+    });
+  }
+
+  return res.status(StatusCodes.OK).json({
+    status: "Success",
+    data: {
+      data: updatedAccount
+    }
+  });
 });

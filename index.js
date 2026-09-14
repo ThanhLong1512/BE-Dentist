@@ -30,6 +30,11 @@ const messageRoutes = require("./routes/messageRoutes");
 const searchRoutes = require("./routes/searchRoutes");
 const availabilityRoutes = require("./routes/availabilityRoutes");
 const healthRoutes = require("./routes/healthRoutes");
+const dentalRecordRoutes = require("./routes/dentalRecordRoutes");
+const facilityRoutes = require("./routes/facilityRoutes");
+const settingRoutes = require("./routes/settingRoutes");
+
+const path = require("path");
 
 const swaggerUi = require("swagger-ui-express");
 const { specs } = require("./docs/swagger");
@@ -57,18 +62,29 @@ app.options("*", cors());
 // Enhance security with Helmet
 app.use(
   helmet({
-    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" }
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+  })
+);
+
+// Serve local static uploaded files
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "public", "uploads"), {
+    maxAge: "7d",
+    etag: true
   })
 );
 
 // Rate limiting middleware with custom keyGenerator
 const limiter = rateLimit({
-  max: 100,
-  windowMs: 60 * 60 * 1000,
-  message: "Too many requests from this IP, please try again in an hour!",
+  max: process.env.NODE_ENV === "development" ? 100000 : 1000,
+  windowMs: 15 * 60 * 1000,
+  message: "Too many requests from this IP, please try again later!",
   keyGenerator: req => {
     return req.headers["x-forwarded-for"]?.split(",")[0] || req.ip;
-  }
+  },
+  skip: () => process.env.NODE_ENV === "development"
 });
 app.use("/api", limiter);
 
@@ -127,6 +143,9 @@ app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/reviews", reviewRoutes);
 app.use("/api/v1/conservations", conservationRoutes);
 app.use("/api/v1/messages", messageRoutes);
+app.use("/api/v1/dental-records", dentalRecordRoutes);
+app.use("/api/v1/facilities", facilityRoutes);
+app.use("/api/v1/settings", settingRoutes);
 
 // // Import routes
 

@@ -59,11 +59,39 @@ const initSocketServer = (port = 8090) => {
       }
     });
 
-    socket.on("sendMessage", ({ senderID, receiverID, text }) => {
+    socket.on("sendMessage", (payload) => {
+      const {
+        senderID,
+        receiverID,
+        text,
+        content,
+        messageType = "text",
+        mediaUrl = "",
+        conservationID
+      } = payload || {};
+
+      const msgText = text || content || "";
+      const messageData = {
+        senderID,
+        receiverID,
+        text: msgText,
+        content: msgText,
+        messageType,
+        mediaUrl,
+        conservationID,
+        createdAt: new Date().toISOString()
+      };
+
       const user = getUser(receiverID);
       if (user) {
-        io.to(user.socketID).emit("getMessage", { senderID, text });
+        io.to(user.socketID).emit("getMessage", messageData);
       }
+
+      if (receiverID) {
+        io.to(`user:${receiverID}`).emit("getMessage", messageData);
+      }
+
+      io.to("dashboard:staff").emit("admin:chat:incoming", messageData);
     });
 
     socket.on("disconnect", () => {

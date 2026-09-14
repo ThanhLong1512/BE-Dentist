@@ -3,12 +3,14 @@ const { client, getIndexName } = require("./elasticsearchClient");
 const VI_ANALYZER = "vi_analyzer";
 
 const baseSettings = {
-  analysis: {
-    analyzer: {
-      [VI_ANALYZER]: {
-        type: "custom",
-        tokenizer: "standard",
-        filter: ["lowercase", "asciifolding"],
+  settings: {
+    analysis: {
+      analyzer: {
+        [VI_ANALYZER]: {
+          type: "custom",
+          tokenizer: "standard",
+          filter: ["lowercase", "asciifolding"],
+        },
       },
     },
   },

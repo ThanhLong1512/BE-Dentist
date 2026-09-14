@@ -13,6 +13,13 @@ Router.route("/")
     shiftController.createShift
   );
 
+Router.post(
+  "/batch",
+  authMiddleware.isAuthorized,
+  rbacMiddleware.isPermission(["admin"]),
+  shiftController.createBatchShifts
+);
+
 Router.route("/:dayOfWeek").get(shiftController.getShiftsByDayOfWeek);
 
 Router.use(authMiddleware.isAuthorized, rbacMiddleware.isPermission(["admin"]));

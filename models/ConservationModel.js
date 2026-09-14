@@ -2,9 +2,12 @@ const mongoose = require("mongoose");
 
 const conservationSchema = new mongoose.Schema(
   {
-    member: {
-      type: Array
-    }
+    member: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Account"
+      }
+    ]
   },
   { timestamps: true }
 );
