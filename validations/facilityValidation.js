@@ -14,7 +14,9 @@ const createFacilityBody = Joi.object({
   managerName: Joi.string().trim().allow("", null).optional(),
   status: Joi.string().valid("active", "maintenance", "inactive").optional(),
   image: Joi.string().allow("", null).optional(),
-  description: Joi.string().allow("", null).optional()
+  description: Joi.string().allow("", null).optional(),
+  latitude: Joi.number().allow(null).optional(),
+  longitude: Joi.number().allow(null).optional()
 });
 
 const updateFacilityBody = Joi.object({
@@ -29,7 +31,9 @@ const updateFacilityBody = Joi.object({
   managerName: Joi.string().trim().allow("", null).optional(),
   status: Joi.string().valid("active", "maintenance", "inactive").optional(),
   image: Joi.string().allow("", null).optional(),
-  description: Joi.string().allow("", null).optional()
+  description: Joi.string().allow("", null).optional(),
+  latitude: Joi.number().allow(null).optional(),
+  longitude: Joi.number().allow(null).optional()
 }).min(1);
 
 const idParams = Joi.object({

@@ -19,7 +19,9 @@ const sampleFacilities = [
     managerName: "TS. BS. Nguyễn Thành Long",
     status: "active",
     image: "/images/resource/image-1.png",
-    description: "Trụ sở chính hiện đại trang bị máy chụp CT Cone Beam 3D, phòng phẫu thuật Implant vô trùng chuẩn quốc tế."
+    description: "Trụ sở chính hiện đại trang bị máy chụp CT Cone Beam 3D, phòng phẫu thuật Implant vô trùng chuẩn quốc tế.",
+    latitude: 10.7865,
+    longitude: 106.6998
   },
   {
     name: "Nha khoa Smile - Chi nhánh Phú Mỹ Hưng",
@@ -33,7 +35,9 @@ const sampleFacilities = [
     managerName: "ThS. BS. Sarah Nguyen",
     status: "active",
     image: "/images/resource/image-2.png",
-    description: "Cơ sở chuyên sâu niềng răng trong suốt Invisalign, thẩm mỹ răng sứ nụ cười chuẩn tỷ lệ vàng."
+    description: "Cơ sở chuyên sâu niềng răng trong suốt Invisalign, thẩm mỹ răng sứ nụ cười chuẩn tỷ lệ vàng.",
+    latitude: 10.7291,
+    longitude: 106.7218
   },
   {
     name: "Nha khoa Smile - Chi nhánh Bình Thạnh",
@@ -47,7 +51,9 @@ const sampleFacilities = [
     managerName: "BS. CKI. David Kim",
     status: "maintenance",
     image: "/images/resource/image-4.png",
-    description: "Chi nhánh đang trong giai đoạn nâng cấp hệ thống phòng khám và trang bị thêm công nghệ Laser nha khoa."
+    description: "Chi nhánh đang trong giai đoạn nâng cấp hệ thống phòng khám và trang bị thêm công nghệ Laser nha khoa.",
+    latitude: 10.7989,
+    longitude: 106.7082
   },
   {
     name: "Nha khoa Smile - Chi nhánh Cầu Giấy",
@@ -61,7 +67,9 @@ const sampleFacilities = [
     managerName: "BS. Robert Wang",
     status: "active",
     image: "/images/resource/image-5.jpg",
-    description: "Trung tâm nha khoa kỹ thuật cao khu vực miền Bắc, diện tích hơn 500m2 với đầy đủ chuyên khoa sâu."
+    description: "Trung tâm nha khoa kỹ thuật cao khu vực miền Bắc, diện tích hơn 500m2 với đầy đủ chuyên khoa sâu.",
+    latitude: 21.0336,
+    longitude: 105.7955
   }
 ];
 
