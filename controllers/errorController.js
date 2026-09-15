@@ -8,9 +8,26 @@ const handleCastErrorDB = err => {
 };
 
 const handleDuplicateFieldsDB = err => {
-  const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
+  let value = "";
+  if (err.keyValue) {
+    if (err.keyValue.account && err.keyValue.service) {
+      return new AppError(
+        "Bạn đã đánh giá dịch vụ này rồi. Mỗi tài khoản chỉ có thể gửi một đánh giá cho mỗi dịch vụ!",
+        400
+      );
+    }
+    value = Object.entries(err.keyValue)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(", ");
+  } else {
+    const raw = err.errmsg || err.message || "";
+    const match = raw.match(/(["'])(\\?.)*?\1/);
+    value = match ? match[0] : "";
+  }
 
-  const message = `Duplicate field value: ${value}. Please use another value!`;
+  const message = value
+    ? `Dữ liệu bị trùng lặp: ${value}. Vui lòng thử lại!`
+    : "Dữ liệu đã tồn tại trong hệ thống. Vui lòng kiểm tra lại!";
   return new AppError(message, 400);
 };
 

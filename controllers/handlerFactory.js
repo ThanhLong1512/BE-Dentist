@@ -48,6 +48,8 @@ const invalidateCache = async (model, id = null) => {
   });
 };
 
+exports.invalidateCache = invalidateCache;
+
 exports.deleteOne = Model =>
   catchAsync(async (req, res, next) => {
     const doc = await Model.findByIdAndDelete(req.params.id);
@@ -58,6 +60,9 @@ exports.deleteOne = Model =>
 
     // Invalidate cache after successful deletion
     await invalidateCache(Model.modelName, req.params.id);
+    if (Model.modelName === "Review") {
+      await invalidateCache("Service");
+    }
 
     res.status(204).json({
       status: "success",
@@ -78,6 +83,9 @@ exports.updateOne = Model =>
 
     // Invalidate cache after successful update
     await invalidateCache(Model.modelName, req.params.id);
+    if (Model.modelName === "Review") {
+      await invalidateCache("Service");
+    }
 
     res.status(200).json({
       status: "success",
@@ -93,6 +101,9 @@ exports.createOne = Model =>
 
     // Invalidate cache after successful creation
     await invalidateCache(Model.modelName);
+    if (Model.modelName === "Review") {
+      await invalidateCache("Service");
+    }
 
     res.status(201).json({
       status: "success",
