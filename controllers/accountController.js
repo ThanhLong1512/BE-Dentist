@@ -55,6 +55,14 @@ exports.updateMyAccount = CatchAsync(async (req, res) => {
   if (req.body.gender) updateData.gender = req.body.gender;
   if (req.body.dateOfBirth) updateData.dateOfBirth = req.body.dateOfBirth;
   if (req.body.address) updateData.address = req.body.address;
+  if (typeof req.body.require_2FA !== "undefined") {
+    updateData.require_2FA =
+      req.body.require_2FA === true || req.body.require_2FA === "true";
+  }
+  if (typeof req.body.isLocked !== "undefined") {
+    updateData.isLocked =
+      req.body.isLocked === true || req.body.isLocked === "true";
+  }
 
   // Handle password update if passed
   if (req.body.password || req.body.currentPassword) {
