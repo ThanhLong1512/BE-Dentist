@@ -230,15 +230,18 @@ const get2FA_QRCode = CatchAsync(async (req, res) => {
     twoFactorSecretKeyValue = twoFactorSecretKey.secret;
   }
   const otpAuthToken = authenticator.keyuri(
-    user.name,
-    process.env.SERVICE_NAME_2FA,
+    user.name || user.email,
+    process.env.SERVICE_NAME_2FA || "DentalClinic",
     twoFactorSecretKeyValue
   );
   const qrCodeImage = await QRCode.toDataURL(otpAuthToken);
 
   res.status(StatusCodes.OK).json({
     message: "Get 2FA QR code successfully",
-    data: qrCodeImage
+    data: {
+      qrCodeImage,
+      secret: twoFactorSecretKeyValue
+    }
   });
 });
 const setUp2FA = CatchAsync(async (req, res) => {
@@ -253,23 +256,22 @@ const setUp2FA = CatchAsync(async (req, res) => {
   });
   if (!twoFactorSecretKey) {
     return res.status(StatusCodes.NOT_FOUND).json({
-      message: "2FA secret key not found"
+      message: "2FA secret key not found. Please scan QR code first."
     });
   }
   const otpTokenClient = req.body.otpTokenClient;
   if (!otpTokenClient) {
     return res.status(StatusCodes.BAD_REQUEST).json({
-      message: "Please provide OTP code"
+      message: "Vui lòng nhập mã OTP"
     });
   }
-  // console.log("otpTokenClient: ", twoFactorSecretKey.secret);
   const isValid = authenticator.verify({
-    token: otpTokenClient,
+    token: String(otpTokenClient).trim(),
     secret: twoFactorSecretKey.secret
   });
   if (!isValid) {
     return res.status(StatusCodes.NOT_ACCEPTABLE).json({
-      message: "Invalid OTP code"
+      message: "Mã OTP không chính xác hoặc đã hết hạn"
     });
   }
   const updatedUser = await Account.findByIdAndUpdate(
@@ -277,18 +279,20 @@ const setUp2FA = CatchAsync(async (req, res) => {
     { require_2FA: true },
     { new: true }
   );
-  const newAccountSession = await AccountSession.create({
-    user_id: user._id,
-    device_id: req.headers["user-agent"],
-    is_2fa_verified: true,
-    last_login: new Date().valueOf()
-  });
+  const newAccountSession = await AccountSession.findOneAndUpdate(
+    {
+      user_id: user._id,
+      device_id: req.headers["user-agent"]
+    },
+    { is_2fa_verified: true, last_login: new Date().valueOf() },
+    { new: true, upsert: true }
+  );
   res.status(StatusCodes.OK).json({
     message: "2FA setup successfully",
     data: {
       user: updatedUser,
-      is_2fa_verified: newAccountSession.is_2fa_verified,
-      last_login: newAccountSession.last_login
+      is_2fa_verified: true,
+      last_login: newAccountSession?.last_login || new Date().valueOf()
     }
   });
 });
@@ -304,22 +308,23 @@ const verify2FA = CatchAsync(async (req, res) => {
   });
   if (!twoFactorSecretKey) {
     return res.status(StatusCodes.NOT_FOUND).json({
-      message: "2FA secret key not found"
+      message: "Chưa tìm thấy mã cấu hình 2FA. Vui lòng quét mã QR để thiết lập.",
+      needs_setup: true
     });
   }
   const otpTokenClient = req.body.otpTokenClient;
   if (!otpTokenClient) {
     return res.status(StatusCodes.BAD_REQUEST).json({
-      message: "Please provide OTP code"
+      message: "Vui lòng nhập mã OTP"
     });
   }
   const isValid = authenticator.verify({
-    token: otpTokenClient,
+    token: String(otpTokenClient).trim(),
     secret: twoFactorSecretKey.secret
   });
   if (!isValid) {
     return res.status(StatusCodes.NOT_ACCEPTABLE).json({
-      message: "Invalid OTP code"
+      message: "Mã OTP không chính xác hoặc đã hết hạn"
     });
   }
   const updatedAccountSession = await AccountSession.findOneAndUpdate(
@@ -328,14 +333,14 @@ const verify2FA = CatchAsync(async (req, res) => {
       device_id: req.headers["user-agent"]
     },
     { is_2fa_verified: true, last_login: new Date().valueOf() },
-    { new: true }
+    { new: true, upsert: true }
   );
   res.status(StatusCodes.OK).json({
     message: "2FA verify successfully",
     data: {
       user: user,
-      is_2fa_verified: updatedAccountSession.is_2fa_verified,
-      last_login: updatedAccountSession.last_login
+      is_2fa_verified: true,
+      last_login: updatedAccountSession?.last_login || new Date().valueOf()
     }
   });
 });
