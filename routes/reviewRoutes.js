@@ -5,6 +5,11 @@ const rbacMiddleware = require("../middlewares/rbacMiddleware");
 
 const router = express.Router({ mergeParams: true });
 
+// Public routes for viewing reviews
+router.route("/").get(reviewController.getAllReviews);
+router.route("/:id").get(reviewController.getReview);
+
+// Protected routes
 router.use(authMiddleware.isAuthorized);
 
 router
@@ -13,9 +18,9 @@ router
     rbacMiddleware.isPermission(["admin"]),
     reviewController.getReviewStatsByPeriod
   );
+
 router
   .route("/")
-  .get(reviewController.getAllReviews)
   .post(
     rbacMiddleware.isPermission(["user", "admin"]),
     reviewController.setServiceUserIds,
@@ -24,7 +29,6 @@ router
 
 router
   .route("/:id")
-  .get(reviewController.getReview)
   .patch(
     rbacMiddleware.isPermission(["user", "admin"]),
     reviewController.updateReview

@@ -18,10 +18,8 @@ dotenv.config({ path: "./config.env" });
 
 const DB = process.env.DATABASE.replace(
   "<PASSWORD>",
-  process.env.DATABASE_PASSWORD
+  process.env.DATABASE_PASSWORD || ""
 );
-
-mongoose.connect(DB).then(() => console.log("DB connection successful!"));
 
 // READ JSON FILE
 const accounts = JSON.parse(
@@ -45,23 +43,17 @@ const twoFa = JSON.parse(fs.readFileSync(`${__dirname}/two-fa.json`, "utf-8"));
 // IMPORT DATA INTO DB
 const importData = async () => {
   try {
-    await Account.create();
-    await Patient.create(patients);
-    await Employee.create(employees);
-    await Service.create(services);
-    await Shift.create(shifts);
-    await Appointment.create(appointments);
-    await TwoFA.create();
-    await AccountSession.create();
-    await Order.create();
-    await Review.create();
-    await Conservation.create();
-    await Message.create();
+    if (accounts?.length) await Account.insertMany(accounts);
+    if (patients?.length) await Patient.insertMany(patients);
+    if (employees?.length) await Employee.insertMany(employees);
+    if (services?.length) await Service.insertMany(services);
+    if (shifts?.length) await Shift.insertMany(shifts);
+    if (appointments?.length) await Appointment.insertMany(appointments);
+    if (twoFa?.length) await TwoFA.insertMany(twoFa);
     console.log("Data successfully loaded!");
   } catch (err) {
-    console.log(err);
+    console.log("Import error:", err.message || err);
   }
-  process.exit();
 };
 
 // DELETE ALL DATA FROM DB
@@ -81,11 +73,23 @@ const deleteData = async () => {
   } catch (err) {
     console.log(err);
   }
-  process.exit();
 };
 
-if (process.argv[2] === "--import") {
-  importData();
-} else if (process.argv[2] === "--delete") {
-  deleteData();
-}
+const main = async () => {
+  try {
+    await mongoose.connect(DB);
+    console.log("DB connection successful!");
+
+    if (process.argv[2] === "--import") {
+      await importData();
+    } else if (process.argv[2] === "--delete") {
+      await deleteData();
+    }
+  } catch (err) {
+    console.error("DB connection or runner error:", err);
+  } finally {
+    process.exit();
+  }
+};
+
+main();

@@ -5,31 +5,22 @@ const rbacMiddleware = require("../middlewares/rbacMiddleware");
 
 const router = express.Router({ mergeParams: true });
 
-router.use(authMiddleware.isAuthorized);
+// Public routes for viewing doctors / employees
+router.route("/").get(employeeController.getAllEmployees);
+router.route("/:id").get(employeeController.getEmployee);
 
-router
-  .route("/")
-  .get(employeeController.getAllEmployees)
-  .post(
-    rbacMiddleware.isPermission(["admin"]),
-    employeeController.setServiceID,
-    employeeController.createEmployee
-  );
+// Admin-protected routes for managing employees
+router.use(authMiddleware.isAuthorized, rbacMiddleware.isPermission(["admin"]));
+
+router.route("/").post(
+  employeeController.setServiceID,
+  employeeController.createEmployee
+);
 
 router
   .route("/:id")
-  .get(employeeController.getEmployee)
-  .post(
-    rbacMiddleware.isPermission(["admin"]),
-    employeeController.duplicateEmployee
-  )
-  .patch(
-    rbacMiddleware.isPermission(["admin"]),
-    employeeController.updateEmployee
-  )
-  .delete(
-    rbacMiddleware.isPermission(["admin"]),
-    employeeController.deleteEmployee
-  );
+  .post(employeeController.duplicateEmployee)
+  .patch(employeeController.updateEmployee)
+  .delete(employeeController.deleteEmployee);
 
 module.exports = router;
