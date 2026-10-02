@@ -56,6 +56,16 @@ const getBusyBlocksForEmployeeOnDate = async ({
 }) => {
   const { start, end } = getDayRange(date);
 
+  const rawId = employeeId && employeeId._id ? employeeId._id : employeeId;
+  const employeeObjectId =
+    rawId && mongoose.Types.ObjectId.isValid(rawId)
+      ? new mongoose.Types.ObjectId(String(rawId))
+      : null;
+
+  if (!employeeObjectId) {
+    return [];
+  }
+
   // Appointment busy blocks (exclude cancelled/completed)
   const appointmentBusy = await Appointment.aggregate([
     { $match: { Date: { $gte: start, $lte: end } } },
@@ -68,7 +78,7 @@ const getBusyBlocksForEmployeeOnDate = async ({
       },
     },
     { $unwind: "$shiftDoc" },
-    { $match: { "shiftDoc.employee": mongoose.Types.ObjectId(employeeId) } },
+    { $match: { "shiftDoc.employee": employeeObjectId } },
     {
       $match: {
         status: { $nin: ["cancelled", "completed"] },
@@ -98,7 +108,7 @@ const getBusyBlocksForEmployeeOnDate = async ({
       },
     },
     { $unwind: "$shiftDoc" },
-    { $match: { "shiftDoc.employee": mongoose.Types.ObjectId(employeeId) } },
+    { $match: { "shiftDoc.employee": employeeObjectId } },
     { $project: { slotStart: 1, slotEnd: 1, expiresAt: 1, shiftStartTime: "$shiftDoc.StartTime", shiftEndTime: "$shiftDoc.EndTime" } },
     // Reservation TTL: reservation might not be expired yet; we only count active ones.
     { $match: { expiresAt: { $gt: new Date() } } },
@@ -159,7 +169,9 @@ const generateAvailableSlots = async ({ date, serviceId, employeeId, shiftId }) 
   const slots = [];
 
   for (const shiftDoc of shifts) {
-    const shiftEmployeeId = employeeId || shiftDoc.employee;
+    const rawEmployee = employeeId || shiftDoc.employee;
+    const shiftEmployeeId =
+      rawEmployee && rawEmployee._id ? rawEmployee._id : rawEmployee;
     if (!shiftEmployeeId) continue;
 
     // Busy blocks are computed for the employee across all his/her shifts in the day.

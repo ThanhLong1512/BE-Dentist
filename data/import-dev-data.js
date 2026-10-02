@@ -39,6 +39,11 @@ const appointments = JSON.parse(
   fs.readFileSync(`${__dirname}/appointments.json`, "utf-8")
 );
 const twoFa = JSON.parse(fs.readFileSync(`${__dirname}/two-fa.json`, "utf-8"));
+const Facility = require("./../models/FacilityModel");
+let facilities = [];
+try {
+  facilities = JSON.parse(fs.readFileSync(`${__dirname}/facilities.json`, "utf-8"));
+} catch (e) {}
 
 // IMPORT DATA INTO DB
 const importData = async () => {
@@ -50,6 +55,7 @@ const importData = async () => {
     if (shifts?.length) await Shift.insertMany(shifts);
     if (appointments?.length) await Appointment.insertMany(appointments);
     if (twoFa?.length) await TwoFA.insertMany(twoFa);
+    if (facilities?.length) await Facility.insertMany(facilities);
     console.log("Data successfully loaded!");
   } catch (err) {
     console.log("Import error:", err.message || err);
