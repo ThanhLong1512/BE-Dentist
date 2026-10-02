@@ -6,7 +6,8 @@ const Account = require("../models/AccountModel");
 const Message = require("../models/MessageModel");
 
 exports.setSenderIds = (req, res, next) => {
-  if (!req.body.senderID) req.body.senderID = req.user.id;
+  if (!req.body) req.body = {};
+  if (!req.body.senderID && req.user) req.body.senderID = req.user.id;
   next();
 };
 exports.getAllConservations = factory.getAll(Conservation);
@@ -16,6 +17,7 @@ exports.updateConservation = factory.updateOne(Conservation);
 exports.deleteConservation = factory.deleteOne(Conservation);
 
 exports.createConservationWithMembers = CatchAsync(async (req, res) => {
+  if (!req.body) req.body = {};
   const senderID = req.body.senderID || req.user.id;
   let adminID = process.env.ADMIN_ID;
 
@@ -25,10 +27,16 @@ exports.createConservationWithMembers = CatchAsync(async (req, res) => {
   }
 
   let existingConservation = null;
-  if (adminID) {
-    existingConservation = await Conservation.findOne({
-      member: { $all: [senderID, adminID] }
-    });
+  if (adminID && senderID) {
+    if (senderID.toString() === adminID.toString()) {
+      existingConservation = await Conservation.findOne({
+        member: { $in: [adminID] }
+      });
+    } else {
+      existingConservation = await Conservation.findOne({
+        member: { $all: [senderID, adminID] }
+      });
+    }
   }
 
   if (existingConservation) {
@@ -41,7 +49,10 @@ exports.createConservationWithMembers = CatchAsync(async (req, res) => {
     });
   }
 
-  const members = adminID && adminID !== senderID ? [senderID, adminID] : [senderID];
+  const members =
+    adminID && adminID.toString() !== senderID.toString()
+      ? [senderID, adminID]
+      : [senderID];
   const newConservation = new Conservation({
     member: members
   });
@@ -106,19 +117,19 @@ exports.getConservationByMembers = CatchAsync(async (req, res) => {
         otherMember =
           validMembers.find(
             (m) =>
-              m._id.toString() !== userId.toString() &&
-              m.role !== "admin" &&
-              m.email !== "admin@gmail.com"
+              (m?._id || m)?.toString() !== userId.toString() &&
+              m?.role !== "admin" &&
+              m?.email !== "admin@gmail.com"
           ) ||
           validMembers.find(
-            (m) => m._id.toString() !== userId.toString()
+            (m) => (m?._id || m)?.toString() !== userId.toString()
           ) ||
           validMembers[0] ||
           null;
       } else {
         otherMember =
           validMembers.find(
-            (m) => m._id.toString() !== userId.toString()
+            (m) => (m?._id || m)?.toString() !== userId.toString()
           ) ||
           validMembers[0] ||
           null;

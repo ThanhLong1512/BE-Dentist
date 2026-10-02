@@ -3,7 +3,8 @@ const Message = require("../models/MessageModel");
 const CatchAsync = require("../utils/catchAsync");
 
 exports.setSenderIds = (req, res, next) => {
-  if (!req.body.senderID) req.body.senderID = req.user.id;
+  if (!req.body) req.body = {};
+  if (!req.body.senderID && req.user) req.body.senderID = req.user.id;
   next();
 };
 exports.getAllMessages = factory.getAll(Message);
