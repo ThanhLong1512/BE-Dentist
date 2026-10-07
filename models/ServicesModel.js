@@ -87,7 +87,5 @@ serviceSchema.virtual("reviews", {
   localField: "_id"
 });
 
-serviceSchema.pre(/^find/, populateReviews);
-
 const Service = mongoose.model("Service", serviceSchema);
 module.exports = Service;

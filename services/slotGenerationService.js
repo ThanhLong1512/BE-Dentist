@@ -32,21 +32,24 @@ const getWorkSegments = (shiftDoc) => {
 
 const loadShiftsForDate = async ({ date, employeeId, shiftId }) => {
   if (shiftId) {
-    const s = await Shift.findById(shiftId).populate({ path: "employee", select: "name" });
+    const s = await Shift.findById(shiftId)
+      .populate({ path: "employee", select: "name" })
+      .lean();
     return s ? [s] : [];
   }
 
   const dayOfWeek = getDayOfWeekString(date);
 
   if (employeeId) {
-    const shifts = await Shift.find({ DayOfWeek: dayOfWeek, employee: employeeId }).populate({
-      path: "employee",
-      select: "name",
-    });
+    const shifts = await Shift.find({ DayOfWeek: dayOfWeek, employee: employeeId })
+      .populate({ path: "employee", select: "name" })
+      .lean();
     return shifts;
   }
 
-  return Shift.find({ DayOfWeek: dayOfWeek }).populate({ path: "employee", select: "name" });
+  return Shift.find({ DayOfWeek: dayOfWeek })
+    .populate({ path: "employee", select: "name" })
+    .lean();
 };
 
 const getBusyBlocksForEmployeeOnDate = async ({
@@ -144,19 +147,29 @@ const getHoldKeyForShiftDate = async (shiftId, dateKey) =>
     return exists === 1;
   }, false);
 
-const checkSlotHold = async ({ shiftId, dateKey, slotStart }) =>
+const getHeldSlotsForShift = async (shiftId, dateKey) =>
   safeRedisOperation(async () => {
     const redis = getRedis().instanceConnect;
-    const exists = await redis.exists(HOLD_KEY_SLOT(shiftId, dateKey, slotStart));
-    return exists === 1;
-  }, false);
+    const prefix = `hold:slot:${shiftId}:${dateKey}:`;
+    const heldSlots = new Set();
+    if (typeof redis.scanIterator === "function") {
+      for await (const key of redis.scanIterator({ MATCH: `${prefix}*` })) {
+        if (key.startsWith(prefix)) {
+          heldSlots.add(key.slice(prefix.length));
+        }
+      }
+    }
+    return heldSlots;
+  }, new Set());
 
 const generateAvailableSlots = async ({ date, serviceId, employeeId, shiftId }) => {
   const slotDate = new Date(date);
   if (Number.isNaN(slotDate.getTime())) throw new Error("Invalid date");
 
   const dateKey = getSlotDateKey(slotDate);
-  const service = await Service.findById(serviceId);
+  const service = await Service.findById(serviceId)
+    .select("durationMinutes bufferMinutes priceService priceDiscount")
+    .lean();
   if (!service) return [];
 
   const durationMinutes = service.durationMinutes ?? 30;
@@ -167,6 +180,7 @@ const generateAvailableSlots = async ({ date, serviceId, employeeId, shiftId }) 
   if (!shifts.length) return [];
 
   const slots = [];
+  const busyBlocksMap = new Map();
 
   for (const shiftDoc of shifts) {
     const rawEmployee = employeeId || shiftDoc.employee;
@@ -174,12 +188,17 @@ const generateAvailableSlots = async ({ date, serviceId, employeeId, shiftId }) 
       rawEmployee && rawEmployee._id ? rawEmployee._id : rawEmployee;
     if (!shiftEmployeeId) continue;
 
-    // Busy blocks are computed for the employee across all his/her shifts in the day.
-    const busyBlocks = await getBusyBlocksForEmployeeOnDate({
-      employeeId: shiftEmployeeId,
-      date: slotDate,
-      bufferMinutes,
-    });
+    // Busy blocks are computed once per employee across the day (memoized)
+    const empKey = String(shiftEmployeeId);
+    let busyBlocks = busyBlocksMap.get(empKey);
+    if (!busyBlocks) {
+      busyBlocks = await getBusyBlocksForEmployeeOnDate({
+        employeeId: shiftEmployeeId,
+        date: slotDate,
+        bufferMinutes,
+      });
+      busyBlocksMap.set(empKey, busyBlocks);
+    }
 
     const segments = getWorkSegments(shiftDoc);
     const slotIntervalMinutes = shiftDoc.slotIntervalMinutes ?? 15;
@@ -189,6 +208,12 @@ const generateAvailableSlots = async ({ date, serviceId, employeeId, shiftId }) 
       dateKey
     );
     if (shouldBlockAllForShift) continue;
+
+    // Fetch all held slots for this shift in one batch
+    const heldSlotsSet = await getHeldSlotsForShift(
+      String(shiftDoc._id),
+      dateKey
+    );
 
     for (const seg of segments) {
       for (
@@ -207,13 +232,8 @@ const generateAvailableSlots = async ({ date, serviceId, employeeId, shiftId }) 
         const slotStart = formatMinutesToTime(slotStartMin);
         const slotEnd = formatMinutesToTime(slotEndMin);
 
-        // Redis slot-hold (granular) check.
-        const slotIsHeld = await checkSlotHold({
-          shiftId: String(shiftDoc._id),
-          dateKey,
-          slotStart,
-        });
-        if (slotIsHeld) continue;
+        // In-memory slot-hold check
+        if (heldSlotsSet && heldSlotsSet.has(slotStart)) continue;
 
         slots.push({
           shiftId: shiftDoc._id.toString(),

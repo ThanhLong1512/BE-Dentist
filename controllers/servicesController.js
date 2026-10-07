@@ -5,7 +5,7 @@ const fs = require("fs");
 const catalogService = require("../services/catalogService");
 
 exports.getAllServices = factory.getAll(Service);
-exports.getService = factory.getOne(Service);
+exports.getService = factory.getOne(Service, { path: "reviews" });
 
 exports.createService = catchAsync(async (req, res) => {
   try {
