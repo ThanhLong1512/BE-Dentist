@@ -190,58 +190,61 @@ exports.getAll = (Model, cacheTTL = CACHE_CONFIG.TTL.SHORT) => async (
   next
 ) => {
   try {
-    const redisClient = getRedis().instanceConnect;
+    const redisAvailable = isRedisReady();
+    let dataCacheKey = null;
+    let countCacheKey = null;
 
-    // Generate cache keys based on query
-    const queryForCache = { ...req.query };
-    const dataCacheKey = generateCacheKey(
-      CACHE_CONFIG.KEYS.ALL_DOCS(Model.modelName, ""),
-      queryForCache
-    );
-    const countCacheKey = generateCacheKey(
-      CACHE_CONFIG.KEYS.COUNT(Model.modelName, ""),
-      queryForCache
-    );
+    if (redisAvailable) {
+      try {
+        const redisClient = getRedis().instanceConnect;
+        const queryForCache = { ...req.query };
+        dataCacheKey = generateCacheKey(
+          CACHE_CONFIG.KEYS.ALL_DOCS(Model.modelName, ""),
+          queryForCache
+        );
+        countCacheKey = generateCacheKey(
+          CACHE_CONFIG.KEYS.COUNT(Model.modelName, ""),
+          queryForCache
+        );
 
-    // Try to get both data and count from cache
-    const [cachedData, cachedCount] = await Promise.all([
-      redisClient.get(dataCacheKey),
-      redisClient.get(countCacheKey)
-    ]);
+        const [cachedData, cachedCount] = await Promise.all([
+          redisClient.get(dataCacheKey).catch(() => null),
+          redisClient.get(countCacheKey).catch(() => null)
+        ]);
 
-    if (cachedData && cachedCount) {
-      console.log(`📦 Cache HIT for getAll ${Model.modelName}`);
-      const data = JSON.parse(cachedData);
-      const totalDocuments = parseInt(cachedCount);
+        if (cachedData && cachedCount) {
+          const data = JSON.parse(cachedData);
+          const totalDocuments = parseInt(cachedCount, 10);
 
-      // Calculate pagination info
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 10;
-      const totalPages = Math.ceil(totalDocuments / limit);
+          const page = parseInt(req.query.page, 10) || 1;
+          const limit = parseInt(req.query.limit, 10) || 10;
+          const totalPages = Math.ceil(totalDocuments / limit);
 
-      return res.status(200).json({
-        status: "success",
-        cached: true,
-        results: data.length,
-        pagination: {
-          page: page,
-          limit: limit,
-          totalDocuments: totalDocuments,
-          totalPages: totalPages,
-          hasNextPage: page < totalPages,
-          hasPrevPage: page > 1,
-          nextPage: page < totalPages ? page + 1 : null,
-          prevPage: page > 1 ? page - 1 : null
-        },
-        data: {
-          data: data
+          return res.status(200).json({
+            status: "success",
+            cached: true,
+            results: data.length,
+            pagination: {
+              page: page,
+              limit: limit,
+              totalDocuments: totalDocuments,
+              totalPages: totalPages,
+              hasNextPage: page < totalPages,
+              hasPrevPage: page > 1,
+              nextPage: page < totalPages ? page + 1 : null,
+              prevPage: page > 1 ? page - 1 : null
+            },
+            data: {
+              data: data
+            }
+          });
         }
-      });
+      } catch (cacheReadError) {
+        // Silently fall through to database query
+      }
     }
 
-    console.log(`🔍 Cache MISS for getAll ${Model.modelName}`);
-
-    // If not in cache, fetch from database
+    // Fetch from database
     const countQuery = Model.find();
 
     const queryObj = { ...req.query };
@@ -261,19 +264,24 @@ exports.getAll = (Model, cacheTTL = CACHE_CONFIG.TTL.SHORT) => async (
       .limitFields()
       .paginate();
 
-    const doc = await features.query;
+    const doc = await features.query.lean();
     const { page, limit } = features.getPaginationInfo();
     const totalPages = Math.ceil(totalDocuments / limit);
 
-    // Cache both data and count
-    await Promise.all([
-      redisClient.setEx(dataCacheKey, cacheTTL, JSON.stringify(doc)),
-      redisClient.setEx(countCacheKey, cacheTTL, totalDocuments.toString())
-    ]);
+    // Cache in Redis if ready
+    if (redisAvailable && dataCacheKey && countCacheKey) {
+      try {
+        const redisClient = getRedis().instanceConnect;
+        await Promise.all([
+          redisClient.setEx(dataCacheKey, cacheTTL, JSON.stringify(doc)),
+          redisClient.setEx(countCacheKey, cacheTTL, totalDocuments.toString())
+        ]);
+      } catch (cacheWriteError) {
+        // Cache write failed, safe to ignore
+      }
+    }
 
-    console.log(`💾 Cached getAll data for ${Model.modelName}`);
-
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
       cached: false,
       results: doc.length,
@@ -292,57 +300,10 @@ exports.getAll = (Model, cacheTTL = CACHE_CONFIG.TTL.SHORT) => async (
       }
     });
   } catch (error) {
-    console.error("⚠️ Error in getAll with cache:", error);
-
-    // Fallback to original implementation
-    try {
-      const countQuery = Model.find();
-
-      const queryObj = { ...req.query };
-      const excludedFields = ["page", "sort", "limit", "fields"];
-      excludedFields.forEach(el => delete queryObj[el]);
-
-      let queryStr = JSON.stringify(queryObj);
-      queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `$${match}`);
-
-      const totalDocuments = await countQuery
-        .find(JSON.parse(queryStr))
-        .countDocuments();
-
-      const features = new APIFeatures(Model.find(), req.query)
-        .filter()
-        .sort()
-        .limitFields()
-        .paginate();
-
-      const doc = await features.query;
-      const { page, limit } = features.getPaginationInfo();
-      const totalPages = Math.ceil(totalDocuments / limit);
-
-      res.status(200).json({
-        status: "success",
-        cached: false,
-        results: doc.length,
-        pagination: {
-          page: page,
-          limit: limit,
-          totalDocuments: totalDocuments,
-          totalPages: totalPages,
-          hasNextPage: page < totalPages,
-          hasPrevPage: page > 1,
-          nextPage: page < totalPages ? page + 1 : null,
-          prevPage: page > 1 ? page - 1 : null
-        },
-        data: {
-          data: doc
-        }
-      });
-    } catch (fallbackError) {
-      res.status(400).json({
-        status: "fail",
-        message: fallbackError.message
-      });
-    }
+    return res.status(500).json({
+      status: "error",
+      message: error.message
+    });
   }
 };
 

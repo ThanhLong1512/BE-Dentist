@@ -117,13 +117,18 @@ const initRedis = async () => {
 const mockRedisClient = {
   get: async () => null,
   set: async () => "OK",
+  setEx: async () => "OK",
   del: async () => 0,
+  exists: async () => 0,
   keys: async () => [],
   expire: async () => 1,
   ttl: async () => -1,
   hGet: async () => null,
   hSet: async () => 1,
-  hGetAll: async () => ({})
+  hGetAll: async () => ({}),
+  scanIterator: async function* () {
+    // empty generator
+  }
 };
 
 const getRedis = () => {
@@ -141,13 +146,12 @@ const getRedis = () => {
 };
 
 const isRedisReady = () => {
-  return client && isConnected && client.isReady;
+  return Boolean(client && isConnected && client.isReady);
 };
 
 const safeRedisOperation = async (operation, fallback = null) => {
   try {
     if (!isRedisReady()) {
-      logger.warn("Redis not ready, skipping cache operation");
       return fallback;
     }
 

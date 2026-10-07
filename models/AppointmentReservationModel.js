@@ -62,6 +62,7 @@ const appointmentReservationSchema = new mongoose.Schema(
 
 // Luc nay pending/confirmed cua cung slotStart trong mot shift/ngay la key de invalidate.
 appointmentReservationSchema.index({ shift: 1, Date: 1, slotStart: 1, status: 1 });
+appointmentReservationSchema.index({ Date: 1, status: 1, expiresAt: 1 });
 appointmentReservationSchema.index({ expiresAt: 1, status: 1 });
 
 module.exports = mongoose.model(

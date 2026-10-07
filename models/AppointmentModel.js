@@ -74,6 +74,7 @@ const appointmentSchema = new mongoose.Schema(
 );
 // Luc nay cho phep nhieu appointment/shift ngay (moi slotStart la mot bookable unit).
 appointmentSchema.index({ shift: 1, Date: 1, slotStart: 1 }, { unique: true });
+appointmentSchema.index({ Date: 1, status: 1 });
 appointmentSchema.pre(/^find/, populatePatientAndShift);
 
 // Backward-compat: neu appointment tao len ma chua co slotStart/slotEnd/service/durationMinutes
